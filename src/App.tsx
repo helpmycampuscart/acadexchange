@@ -18,24 +18,46 @@ import { User as UserType } from "@/types";
 const queryClient = new QueryClient();
 
 const UserManager = () => {
-  const { user, isLoaded } = useUser();
+  try {
+    const { user, isLoaded } = useUser();
 
-  useEffect(() => {
-    if (isLoaded && user) {
-      // Save/update user in local storage
-      const userData: UserType = {
-        id: user.id,
-        email: user.emailAddresses[0]?.emailAddress || '',
-        name: user.fullName || user.firstName || 'Anonymous',
-        role: user.emailAddresses[0]?.emailAddress === 'admin@campuscart.com' ? 'admin' : 'user',
-        createdAt: user.createdAt?.toISOString() || new Date().toISOString()
-      };
-      
-      saveUser(userData);
-    }
-  }, [user, isLoaded]);
+    useEffect(() => {
+      if (isLoaded && user) {
+        // Save/update user in local storage
+        const userData: UserType = {
+          id: user.id,
+          email: user.emailAddresses[0]?.emailAddress || '',
+          name: user.fullName || user.firstName || 'Anonymous',
+          role: user.emailAddresses[0]?.emailAddress === 'admin@mycampuscart.com' ? 'admin' : 'user',
+          createdAt: user.createdAt?.toISOString() || new Date().toISOString()
+        };
+        
+        saveUser(userData);
+      }
+    }, [user, isLoaded]);
 
-  return null;
+    return null;
+  } catch (error) {
+    console.error('UserManager error:', error);
+    return null;
+  }
+};
+
+const ClerkLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
+  const { isLoaded } = useUser();
+  
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading MyCampusCart...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return <>{children}</>;
 };
 
 const App = () => (
@@ -43,19 +65,21 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <UserManager />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/sell" element={<SellPage />} />
-          <Route path="/my-listings" element={<MyListings />} />
-          <Route path="/admin" element={<AdminPanel />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <ClerkLoadingWrapper>
+        <BrowserRouter>
+          <UserManager />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/sell" element={<SellPage />} />
+            <Route path="/my-listings" element={<MyListings />} />
+            <Route path="/admin" element={<AdminPanel />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </ClerkLoadingWrapper>
     </TooltipProvider>
   </QueryClientProvider>
 );
