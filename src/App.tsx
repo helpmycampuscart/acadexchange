@@ -22,18 +22,22 @@ const UserManager = () => {
     const { user, isLoaded } = useUser();
 
     useEffect(() => {
-      if (isLoaded && user) {
-        // Save/update user in local storage
-        const userData: UserType = {
-          id: user.id,
-          email: user.emailAddresses[0]?.emailAddress || '',
-          name: user.fullName || user.firstName || 'Anonymous',
-          role: user.emailAddresses[0]?.emailAddress === 'admin@mycampuscart.com' ? 'admin' : 'user',
-          createdAt: user.createdAt?.toISOString() || new Date().toISOString()
-        };
-        
-        saveUser(userData);
-      }
+      const syncUser = async () => {
+        if (isLoaded && user) {
+          // Save/update user in local storage and Supabase
+          const userData: UserType = {
+            id: user.id,
+            email: user.emailAddresses[0]?.emailAddress || '',
+            name: user.fullName || user.firstName || 'Anonymous',
+            role: 'user', // Will be set by saveUser based on admin emails
+            createdAt: user.createdAt?.toISOString() || new Date().toISOString()
+          };
+          
+          await saveUser(userData);
+        }
+      };
+
+      syncUser();
     }, [user, isLoaded]);
 
     return null;

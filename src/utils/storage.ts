@@ -1,4 +1,16 @@
 import { Product, User } from '@/types';
+import { supabase } from '@/lib/supabase';
+
+// Admin email addresses that should have admin role
+const ADMIN_EMAILS = [
+  'admin@mycampuscart.com',
+  'your-admin-email@example.com' // Add your admin email here
+];
+
+// Check if user email is admin
+export const isAdminEmail = (email: string): boolean => {
+  return ADMIN_EMAILS.includes(email.toLowerCase());
+};
 
 // Local storage keys
 const PRODUCTS_KEY = 'mycampuscart_products';
@@ -39,18 +51,48 @@ export const deleteProduct = (productId: string): void => {
   localStorage.setItem(PRODUCTS_KEY, JSON.stringify(filtered));
 };
 
-// User storage functions
-export const saveUser = (user: User): void => {
-  const users = getUsers();
-  const existingIndex = users.findIndex(u => u.id === user.id);
-  
-  if (existingIndex !== -1) {
-    users[existingIndex] = user;
-  } else {
-    users.push(user);
+// User storage functions (enhanced with Supabase sync)
+export const saveUser = async (user: User): Promise<void> => {
+  try {
+    // Check if user should be admin
+    const userWithRole = {
+      ...user,
+      role: isAdminEmail(user.email) ? 'admin' as const : 'user' as const
+    };
+
+    // Save to localStorage for immediate access
+    const users = getUsers();
+    const existingIndex = users.findIndex(u => u.id === user.id);
+    
+    if (existingIndex !== -1) {
+      users[existingIndex] = userWithRole;
+    } else {
+      users.push(userWithRole);
+    }
+    
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+
+    // Sync with Supabase
+    try {
+      const { error } = await supabase
+        .from('users')
+        .upsert({
+          id: userWithRole.id,
+          email: userWithRole.email,
+          name: userWithRole.name,
+          role: userWithRole.role,
+          created_at: userWithRole.createdAt
+        });
+
+      if (error && error.code !== 'PGRST116') { // Ignore table doesn't exist error
+        console.warn('Supabase sync warning:', error.message);
+      }
+    } catch (supabaseError) {
+      console.warn('Supabase not configured or table missing:', supabaseError);
+    }
+  } catch (error) {
+    console.error('Error saving user:', error);
   }
-  
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
 };
 
 export const getUsers = (): User[] => {
