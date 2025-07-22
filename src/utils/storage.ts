@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 // Admin email addresses that should have admin role
 const ADMIN_EMAILS = [
   'admin@mycampuscart.com',
+  'abhinavpadige06@gmail.com',
   'your-admin-email@example.com' // Add your admin email here
 ];
 

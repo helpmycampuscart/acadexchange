@@ -6,26 +6,27 @@ import { Button } from "@/components/ui/button";
 const Navbar = () => {
   const navigate = useNavigate();
   const { user } = useUser();
-  const isAdmin = user?.emailAddresses[0]?.emailAddress === 'admin@campuscart.com';
+  const isAdmin = user?.emailAddresses[0]?.emailAddress === 'abhinavpadige06@gmail.com' || 
+                   user?.emailAddresses[0]?.emailAddress === 'admin@mycampuscart.com';
 
   return (
-    <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container mx-auto px-4">
+    <nav className="border-b border-border/30 glass-card sticky top-0 z-50">
+      <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
+          {/* Enhanced Logo */}
           <div 
-            className="text-xl font-bold text-primary cursor-pointer hover:text-primary/80 transition-colors"
+            className="text-2xl font-bold gradient-text cursor-pointer hover:scale-105 transition-transform duration-300"
             onClick={() => navigate('/')}
           >
             MyCampusCart
           </div>
 
-          {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-6">
+          {/* Enhanced Navigation Links */}
+          <div className="hidden md:flex items-center space-x-2">
             <Button
               variant="ghost"
               onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 hover-lift hover:bg-primary/10 transition-all duration-300"
             >
               <Home className="h-4 w-4" />
               <span>Dashboard</span>
@@ -34,7 +35,7 @@ const Navbar = () => {
             <Button
               variant="ghost"
               onClick={() => navigate('/marketplace')}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 hover-lift hover:bg-primary/10 transition-all duration-300"
             >
               <ShoppingBag className="h-4 w-4" />
               <span>Marketplace</span>
@@ -44,7 +45,7 @@ const Navbar = () => {
               <Button
                 variant="ghost"
                 onClick={() => navigate('/sell')}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 hover-lift hover:bg-primary/10 transition-all duration-300"
               >
                 <PlusCircle className="h-4 w-4" />
                 <span>Sell</span>
@@ -53,7 +54,7 @@ const Navbar = () => {
               <Button
                 variant="ghost"
                 onClick={() => navigate('/my-listings')}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 hover-lift hover:bg-primary/10 transition-all duration-300"
               >
                 <List className="h-4 w-4" />
                 <span>My Listings</span>
@@ -63,7 +64,7 @@ const Navbar = () => {
                 <Button
                   variant="ghost"
                   onClick={() => navigate('/admin')}
-                  className="flex items-center space-x-2 text-red-600 hover:text-red-700"
+                  className="flex items-center space-x-2 premium-button text-primary hover:text-primary-foreground border border-primary/30"
                 >
                   <Settings className="h-4 w-4" />
                   <span>Admin</span>
@@ -72,11 +73,11 @@ const Navbar = () => {
             </SignedIn>
           </div>
 
-          {/* User Section */}
+          {/* Enhanced User Section */}
           <div className="flex items-center space-x-4">
             <SignedOut>
               <SignInButton mode="modal">
-                <Button variant="outline">
+                <Button variant="outline" className="hover-lift premium-button">
                   Sign In
                 </Button>
               </SignInButton>
@@ -86,7 +87,7 @@ const Navbar = () => {
               <UserButton 
                 appearance={{
                   elements: {
-                    avatarBox: "w-8 h-8"
+                    avatarBox: "w-9 h-9 hover:scale-110 transition-transform duration-300 ring-2 ring-primary/20 hover:ring-primary/40"
                   }
                 }}
               />
