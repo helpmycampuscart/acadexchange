@@ -43,43 +43,24 @@ const UserManager = () => {
   }
 };
 
-const ClerkLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
-  const { isLoaded } = useUser();
-  
-  if (!isLoaded) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading MyCampusCart...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  return <>{children}</>;
-};
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <ClerkLoadingWrapper>
-        <BrowserRouter>
-          <UserManager />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/marketplace" element={<Marketplace />} />
-            <Route path="/sell" element={<SellPage />} />
-            <Route path="/my-listings" element={<MyListings />} />
-            <Route path="/admin" element={<AdminPanel />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </ClerkLoadingWrapper>
+      <BrowserRouter>
+        <UserManager />
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/sell" element={<SellPage />} />
+          <Route path="/my-listings" element={<MyListings />} />
+          <Route path="/admin" element={<AdminPanel />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
