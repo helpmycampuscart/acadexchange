@@ -5,8 +5,8 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Product } from "@/types";
-import { useUser } from "@clerk/clerk-react";
-import { updateProduct } from "@/utils/storage";
+import { useAuth } from "@/hooks/useAuth";
+import { updateProductInSupabase } from "@/utils/supabaseStorage";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProductCardProps {
@@ -18,12 +18,11 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh }: ProductCardProps) => {
-  const { user } = useUser();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const isOwner = user?.emailAddresses[0]?.emailAddress === product.userEmail;
-  const isAdmin = user?.emailAddresses[0]?.emailAddress === 'admin@campuscart.com';
+  const isOwner = user?.email === product.userEmail;
 
   const handleWhatsAppClick = () => {
     const message = `Hi! I'm interested in your product:\n\n📦 ${product.name}\n🆔 Product ID: ${product.uniqueId}\n💰 Price: ₹${product.price.toLocaleString()}\n\nIs it still available?`;
@@ -31,32 +30,29 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
     window.open(whatsappUrl, '_blank');
   };
 
-  const handleMarkAsSold = () => {
+  const handleMarkAsSold = async () => {
     if (!isOwner && !isAdmin) return;
     
-    setIsLoading(true);
+    setIsUpdating(true);
     try {
-      const newStatus = !product.isSold;
-      updateProduct(product.id, { isSold: newStatus });
-      
-      toast({
-        title: newStatus ? "✅ Product marked as sold" : "🔄 Product marked as available",
-        description: `${product.name} status updated successfully`,
-      });
-      
-      // Force refresh after a short delay to ensure state is updated
-      setTimeout(() => {
+      const result = await updateProductInSupabase(product.id, { isSold: !product.isSold });
+      if (result.success) {
+        toast({
+          title: product.isSold ? "Product marked as available" : "Product marked as sold",
+          description: product.isSold ? "Your item is now available for sale again" : "Congratulations on your sale! 🎉",
+        });
         onRefresh?.();
-        setIsLoading(false);
-      }, 100);
+      } else {
+        throw new Error(result.error || 'Failed to update product');
+      }
     } catch (error) {
-      console.error('Error updating product status:', error);
       toast({
-        title: "❌ Error",
-        description: "Failed to update product status. Please try again.",
-        variant: "destructive",
+        title: "Error",
+        description: "Failed to update product status",
+        variant: "destructive"
       });
-      setIsLoading(false);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -69,106 +65,109 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
   };
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group">
-      <div className="relative">
-        {product.imageUrl && (
-          <div className="aspect-video overflow-hidden">
-            <img 
-              src={product.imageUrl} 
-              alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
+    <Card className={`hover-lift transition-all duration-300 ${product.isSold ? 'opacity-75' : ''}`}>
+      <CardHeader className="space-y-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center space-x-2">
+            <Badge variant={product.isSold ? "secondary" : "default"}>
+              {product.category}
+            </Badge>
+            {product.isSold && (
+              <Badge variant="secondary" className="bg-green-100 text-green-800">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Sold
+              </Badge>
+            )}
           </div>
-        )}
-        
-        {/* Status Badge */}
-        {product.isSold && (
-          <Badge className="absolute top-2 left-2 bg-green-600 text-white">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Sold
-          </Badge>
-        )}
-
-        {/* Actions Menu */}
-        {showActions && (isOwner || isAdmin) && (
-          <div className="absolute top-2 right-2">
+          
+          {showActions && (isOwner || isAdmin) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="secondary" size="sm" className="bg-white/90 hover:bg-white">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleMarkAsSold} disabled={isLoading}>
-                  {product.isSold ? "Mark as Available" : "Mark as Sold"}
-                </DropdownMenuItem>
-                {onEdit && (
-                  <DropdownMenuItem onClick={() => onEdit(product)}>
-                    Edit Product
-                  </DropdownMenuItem>
+                {isOwner && (
+                  <>
+                    <DropdownMenuItem onClick={() => onEdit?.(product)}>
+                      Edit Product
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={handleMarkAsSold}
+                      disabled={isUpdating}
+                    >
+                      {product.isSold ? 'Mark as Available' : 'Mark as Sold'}
+                    </DropdownMenuItem>
+                  </>
                 )}
-                {onDelete && (
+                {(isOwner || isAdmin) && (
                   <DropdownMenuItem 
-                    onClick={() => onDelete(product.id)}
-                    className="text-red-600 hover:text-red-700"
+                    onClick={() => onDelete?.(product.id)}
+                    className="text-red-600"
                   >
                     Delete Product
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
+          )}
+        </div>
+
+        {product.imageUrl && (
+          <div className="aspect-video overflow-hidden rounded-lg">
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            />
           </div>
         )}
-      </div>
-
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div className="space-y-1">
-            <h3 className="font-semibold text-lg line-clamp-1">{product.name}</h3>
-            <div className="text-2xl font-bold text-primary">
-              ₹{product.price.toLocaleString()}
-            </div>
-          </div>
-          <Badge variant="secondary">{product.category}</Badge>
-        </div>
       </CardHeader>
 
-      <CardContent className="pb-3">
-        <p className="text-muted-foreground text-sm line-clamp-2 mb-3">
-          {product.description}
-        </p>
-        
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center text-muted-foreground">
-            <MapPin className="h-4 w-4 mr-2" />
-            {product.location}
-          </div>
-          <div className="flex items-center text-muted-foreground">
-            <Calendar className="h-4 w-4 mr-2" />
-            {formatDate(product.createdAt)}
-          </div>
+      <CardContent className="space-y-3">
+        <div>
+          <h3 className="font-semibold text-lg leading-tight mb-1">
+            {product.name}
+          </h3>
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {product.description}
+          </p>
         </div>
-        
-        <div className="mt-3 pt-3 border-t border-border">
-          <div className="text-xs text-muted-foreground">
-            <span className="font-medium">ID:</span> {product.uniqueId}
+
+        <div className="flex items-center justify-between">
+          <div className="text-2xl font-bold text-primary">
+            ₹{product.price.toLocaleString()}
           </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            <span className="font-medium">Seller:</span> {product.userName}
+          {!product.isSold && (
+            <Button 
+              size="sm" 
+              onClick={handleWhatsAppClick}
+              className="flex items-center space-x-1"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>Contact</span>
+            </Button>
+          )}
+        </div>
+
+        <div className="space-y-2 text-sm text-muted-foreground">
+          <div className="flex items-center space-x-2">
+            <MapPin className="h-4 w-4" />
+            <span>{product.location}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Calendar className="h-4 w-4" />
+            <span>Listed on {formatDate(product.createdAt)}</span>
           </div>
         </div>
       </CardContent>
 
-      <CardFooter>
-        <Button 
-          variant="whatsapp" 
-          className="w-full"
-          onClick={handleWhatsAppClick}
-          disabled={product.isSold}
-        >
-          <MessageCircle className="h-4 w-4 mr-2" />
-          {product.isSold ? "Sold Out" : "Chat on WhatsApp"}
-        </Button>
+      <CardFooter className="pt-0">
+        <div className="text-xs text-muted-foreground">
+          <p>Product ID: {product.uniqueId}</p>
+          <p>Seller: {product.userName}</p>
+        </div>
       </CardFooter>
     </Card>
   );

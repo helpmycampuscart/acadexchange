@@ -1,6 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types';
 
+// Generate unique product ID
+export const generateProductId = (): string => {
+  const prefix = 'MCC';
+  const timestamp = Date.now().toString();
+  const random = Math.random().toString(36).substring(2, 8);
+  return `${prefix}${timestamp}${random}`.toUpperCase();
+};
+
 // Product operations with Supabase
 export const saveProductToSupabase = async (product: Product): Promise<{ success: boolean; error?: string }> => {
   try {

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useUser } from "@clerk/clerk-react";
 import { Plus, Package, TrendingUp, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,12 +7,13 @@ import ProductCard from "@/components/ProductCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Product } from "@/types";
-import { getProducts, deleteProduct } from "@/utils/storage";
+import { getProductsFromSupabase, deleteProductFromSupabase } from "@/utils/supabaseStorage";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 const MyListings = () => {
-  const { user } = useUser();
+  const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [userProducts, setUserProducts] = useState<Product[]>([]);
@@ -25,11 +25,11 @@ const MyListings = () => {
     }
   }, [user]);
 
-  const loadUserProducts = () => {
+  const loadUserProducts = async () => {
     setLoading(true);
     try {
-      const allProducts = getProducts();
-      const userEmail = user?.emailAddresses[0]?.emailAddress;
+      const allProducts = await getProductsFromSupabase();
+      const userEmail = user?.email;
       const filtered = allProducts.filter(product => product.userEmail === userEmail);
       
       // Sort by creation date (newest first)
@@ -48,14 +48,18 @@ const MyListings = () => {
     }
   };
 
-  const handleDelete = (productId: string) => {
+  const handleDelete = async (productId: string) => {
     try {
-      deleteProduct(productId);
-      toast({
-        title: "Product Deleted",
-        description: "Your listing has been removed successfully",
-      });
-      loadUserProducts();
+      const result = await deleteProductFromSupabase(productId);
+      if (result.success) {
+        toast({
+          title: "Product Deleted",
+          description: "Your listing has been removed successfully",
+        });
+        loadUserProducts();
+      } else {
+        throw new Error(result.error || 'Failed to delete product');
+      }
     } catch (error) {
       toast({
         title: "Error",
