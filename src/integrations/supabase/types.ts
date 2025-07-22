@@ -14,7 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      products: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_sold: boolean
+          location: string
+          name: string
+          price: number
+          unique_id: string
+          user_email: string
+          user_id: string
+          user_name: string
+          whatsapp_number: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id: string
+          image_url?: string | null
+          is_sold?: boolean
+          location: string
+          name: string
+          price: number
+          unique_id: string
+          user_email: string
+          user_id: string
+          user_name: string
+          whatsapp_number: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_sold?: boolean
+          location?: string
+          name?: string
+          price?: number
+          unique_id?: string
+          user_email?: string
+          user_id?: string
+          user_name?: string
+          whatsapp_number?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          role?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          role?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
