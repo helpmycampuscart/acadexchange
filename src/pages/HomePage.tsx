@@ -1,16 +1,15 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUser, SignedIn, SignedOut, SignInButton } from "@clerk/clerk-react";
 import { ArrowRight, ShoppingBag, Users, Shield, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import heroImage from "@/assets/hero-image.jpg";
-import { useAuth } from "@/hooks/useAuth";
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useUser();
 
   return (
     <div className="min-h-screen bg-background">
@@ -33,14 +32,26 @@ const HomePage = () => {
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  size="lg" 
-                  className="premium-button"
-                  onClick={() => navigate(user ? '/dashboard' : '/auth')}
-                >
-                  {user ? 'Go to Dashboard' : 'Get Started'}
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <Button size="lg" className="premium-button">
+                      Get Started
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </SignInButton>
+                </SignedOut>
+                
+                <SignedIn>
+                  <Button 
+                    size="lg" 
+                    className="premium-button"
+                    onClick={() => navigate('/dashboard')}
+                  >
+                    Go to Dashboard
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </SignedIn>
+
                 <Button 
                   variant="outline" 
                   size="lg"

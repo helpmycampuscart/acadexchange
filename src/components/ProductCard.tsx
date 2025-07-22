@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Product } from "@/types";
-import { useAuth } from "@/hooks/useAuth";
+import { useUser } from "@clerk/clerk-react";
 import { updateProductInSupabase } from "@/utils/supabaseStorage";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,11 +18,13 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh }: ProductCardProps) => {
-  const { user, isAdmin } = useAuth();
+  const { user } = useUser();
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const isOwner = user?.email === product.userEmail;
+  const isOwner = user?.emailAddresses[0]?.emailAddress === product.userEmail;
+  const isAdmin = user?.emailAddresses[0]?.emailAddress === 'abhinavpadige06@gmail.com' ||
+                   user?.emailAddresses[0]?.emailAddress === 'admin@mycampuscart.com';
 
   const handleWhatsAppClick = () => {
     const message = `Hi! I'm interested in your product:\n\n📦 ${product.name}\n🆔 Product ID: ${product.uniqueId}\n💰 Price: ₹${product.price.toLocaleString()}\n\nIs it still available?`;

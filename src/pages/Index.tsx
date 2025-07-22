@@ -1,20 +1,20 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useUser } from '@clerk/clerk-react';
 import HomePage from './HomePage';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 const Index = () => {
-  const { user, loading } = useAuth();
+  const { user, isLoaded } = useUser();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && user) {
+    if (isLoaded && user) {
       navigate('/dashboard');
     }
-  }, [user, loading, navigate]);
+  }, [user, isLoaded, navigate]);
 
-  if (loading) {
+  if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />

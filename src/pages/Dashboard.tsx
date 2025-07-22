@@ -1,14 +1,16 @@
 import { useNavigate } from "react-router-dom";
+import { useUser } from "@clerk/clerk-react";
 import { ShoppingBag, PlusCircle, List, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useAuth } from "@/hooks/useAuth";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user } = useUser();
+  const isAdmin = user?.emailAddresses[0]?.emailAddress === 'abhinavpadige06@gmail.com' ||
+                   user?.emailAddresses[0]?.emailAddress === 'admin@mycampuscart.com';
 
   const actions = [
     {
@@ -53,7 +55,7 @@ const Dashboard = () => {
           {/* Welcome Section */}
           <div className="text-center mb-12">
             <h1 className="text-3xl md:text-4xl font-bold mb-4">
-              Welcome back, {user?.email?.split('@')[0] || 'Student'}! 👋
+              Welcome back, {user?.firstName || user?.emailAddresses[0]?.emailAddress?.split('@')[0] || 'Student'}! 👋
             </h1>
             <p className="text-xl text-muted-foreground">
               What would you like to do today?

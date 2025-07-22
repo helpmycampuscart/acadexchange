@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "@clerk/clerk-react";
 import { Upload, X, DollarSign, Package, MapPin, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,11 +13,10 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Product, CATEGORIES, LOCATIONS } from "@/types";
 import { saveProductToSupabase, generateProductId } from "@/utils/supabaseStorage";
-import { useAuth } from "@/hooks/useAuth";
 
 const SellPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useUser();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -156,8 +156,8 @@ const SellPage = () => {
         whatsappNumber: formData.whatsappNumber.trim(),
         imageUrl: formData.imageUrl || undefined,
         userId: user.id,
-        userEmail: user.email || '',
-        userName: user.email?.split('@')[0] || 'Anonymous',
+        userEmail: user.emailAddresses[0]?.emailAddress || '',
+        userName: user.fullName || user.firstName || 'Anonymous',
         createdAt: new Date().toISOString(),
         isSold: false
       };

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useUser } from "@clerk/clerk-react";
 import { Plus, Package, TrendingUp, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,10 +11,9 @@ import { Product } from "@/types";
 import { getProductsFromSupabase, deleteProductFromSupabase } from "@/utils/supabaseStorage";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
 
 const MyListings = () => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [userProducts, setUserProducts] = useState<Product[]>([]);
@@ -29,7 +29,7 @@ const MyListings = () => {
     setLoading(true);
     try {
       const allProducts = await getProductsFromSupabase();
-      const userEmail = user?.email;
+      const userEmail = user?.emailAddresses[0]?.emailAddress;
       const filtered = allProducts.filter(product => product.userEmail === userEmail);
       
       // Sort by creation date (newest first)
