@@ -84,12 +84,15 @@ const AdminPanel = () => {
     try {
       const newRole = currentRole === 'admin' ? 'user' : 'admin';
       
-      const { error } = await supabase
-        .from('users')
-        .update({ role: newRole })
-        .eq('id', userId);
+      // Use the secure server-side function for role updates
+      const { error } = await supabase.rpc('update_user_role', {
+        target_user_id: userId,
+        new_role: newRole
+      });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       setUsers(users.map(u => 
         u.id === userId ? { ...u, role: newRole as 'user' | 'admin' } : u
@@ -99,10 +102,10 @@ const AdminPanel = () => {
         title: "User role updated",
         description: `User role changed to ${newRole}`
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update user role",
+        description: error.message || "Failed to update user role",
         variant: "destructive"
       });
     }

@@ -11,15 +11,40 @@ export const useClerkSync = () => {
       if (!isLoaded || !user) return;
 
       try {
-        // Sync user to Supabase
-        const { error } = await supabase.rpc('sync_clerk_user', {
-          clerk_user_id: user.id,
-          user_email: user.emailAddresses[0]?.emailAddress || '',
-          user_name: user.fullName || user.firstName || 'Anonymous'
-        });
+        // Check if user exists in our database
+        const { data: existingUser } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', user.id)
+          .single();
 
-        if (error) {
-          console.error('Error syncing user:', error);
+        if (!existingUser) {
+          // Insert new user
+          const { error } = await supabase
+            .from('users')
+            .insert({
+              id: user.id,
+              email: user.emailAddresses[0]?.emailAddress || '',
+              name: user.fullName || user.firstName || 'Anonymous',
+              role: 'user'
+            });
+
+          if (error) {
+            console.error('Error syncing user:', error);
+          }
+        } else {
+          // Update existing user's info
+          const { error } = await supabase
+            .from('users')
+            .update({
+              email: user.emailAddresses[0]?.emailAddress || '',
+              name: user.fullName || user.firstName || 'Anonymous'
+            })
+            .eq('id', user.id);
+
+          if (error) {
+            console.error('Error updating user:', error);
+          }
         }
       } catch (error) {
         console.error('Error syncing user:', error);

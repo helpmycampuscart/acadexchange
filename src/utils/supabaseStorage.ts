@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types';
 
@@ -9,25 +10,73 @@ export const generateProductId = (): string => {
   return `${prefix}${timestamp}${random}`.toUpperCase();
 };
 
+// Input validation functions
+const validateProduct = (product: Product): { valid: boolean; error?: string } => {
+  if (!product.name || product.name.trim().length < 2) {
+    return { valid: false, error: 'Product name must be at least 2 characters long' };
+  }
+  
+  if (product.price <= 0 || product.price > 1000000) {
+    return { valid: false, error: 'Price must be between ₹1 and ₹10,00,000' };
+  }
+  
+  if (!product.category || product.category.trim().length === 0) {
+    return { valid: false, error: 'Category is required' };
+  }
+  
+  if (!product.location || product.location.trim().length === 0) {
+    return { valid: false, error: 'Location is required' };
+  }
+  
+  // Validate WhatsApp number format (basic validation)
+  const whatsappRegex = /^[+]?[1-9]\d{1,14}$/;
+  if (!product.whatsappNumber || !whatsappRegex.test(product.whatsappNumber.replace(/\s/g, ''))) {
+    return { valid: false, error: 'Please enter a valid WhatsApp number' };
+  }
+  
+  return { valid: true };
+};
+
+const sanitizeInput = (input: string): string => {
+  return input.trim().replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+};
+
 // Product operations with Supabase
 export const saveProductToSupabase = async (product: Product): Promise<{ success: boolean; error?: string }> => {
   try {
+    // Validate product data
+    const validation = validateProduct(product);
+    if (!validation.valid) {
+      return { success: false, error: validation.error };
+    }
+
+    // Sanitize string inputs
+    const sanitizedProduct = {
+      ...product,
+      name: sanitizeInput(product.name),
+      description: product.description ? sanitizeInput(product.description) : '',
+      category: sanitizeInput(product.category),
+      location: sanitizeInput(product.location),
+      userEmail: sanitizeInput(product.userEmail),
+      userName: sanitizeInput(product.userName)
+    };
+
     const { error } = await supabase
       .from('products')
       .insert({
-        id: product.id,
-        unique_id: product.uniqueId,
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        category: product.category,
-        location: product.location,
-        whatsapp_number: product.whatsappNumber,
-        image_url: product.imageUrl,
-        user_id: product.userId,
-        user_email: product.userEmail,
-        user_name: product.userName,
-        is_sold: product.isSold,
+        id: sanitizedProduct.id,
+        unique_id: sanitizedProduct.uniqueId,
+        name: sanitizedProduct.name,
+        description: sanitizedProduct.description,
+        price: sanitizedProduct.price,
+        category: sanitizedProduct.category,
+        location: sanitizedProduct.location,
+        whatsapp_number: sanitizedProduct.whatsappNumber,
+        image_url: sanitizedProduct.imageUrl,
+        user_id: sanitizedProduct.userId,
+        user_email: sanitizedProduct.userEmail,
+        user_name: sanitizedProduct.userName,
+        is_sold: sanitizedProduct.isSold,
       });
 
     if (error) {
@@ -80,12 +129,34 @@ export const updateProductInSupabase = async (productId: string, updates: Partia
   try {
     const updateData: any = {};
     
-    if (updates.name) updateData.name = updates.name;
-    if (updates.description !== undefined) updateData.description = updates.description;
-    if (updates.price) updateData.price = updates.price;
-    if (updates.category) updateData.category = updates.category;
-    if (updates.location) updateData.location = updates.location;
-    if (updates.whatsappNumber) updateData.whatsapp_number = updates.whatsappNumber;
+    if (updates.name) {
+      updateData.name = sanitizeInput(updates.name);
+      if (updateData.name.length < 2) {
+        return { success: false, error: 'Product name must be at least 2 characters long' };
+      }
+    }
+    if (updates.description !== undefined) {
+      updateData.description = updates.description ? sanitizeInput(updates.description) : '';
+    }
+    if (updates.price) {
+      if (updates.price <= 0 || updates.price > 1000000) {
+        return { success: false, error: 'Price must be between ₹1 and ₹10,00,000' };
+      }
+      updateData.price = updates.price;
+    }
+    if (updates.category) {
+      updateData.category = sanitizeInput(updates.category);
+    }
+    if (updates.location) {
+      updateData.location = sanitizeInput(updates.location);
+    }
+    if (updates.whatsappNumber) {
+      const whatsappRegex = /^[+]?[1-9]\d{1,14}$/;
+      if (!whatsappRegex.test(updates.whatsappNumber.replace(/\s/g, ''))) {
+        return { success: false, error: 'Please enter a valid WhatsApp number' };
+      }
+      updateData.whatsapp_number = updates.whatsappNumber;
+    }
     if (updates.imageUrl !== undefined) updateData.image_url = updates.imageUrl;
     if (updates.isSold !== undefined) updateData.is_sold = updates.isSold;
 
