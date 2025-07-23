@@ -1,6 +1,6 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "@clerk/clerk-react";
 import { Upload, X, DollarSign, Package, MapPin, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +13,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Product, CATEGORIES, LOCATIONS } from "@/types";
 import { saveProductToSupabase, generateProductId } from "@/utils/supabaseStorage";
+import { uploadImageToSupabase } from "@/utils/imageUpload";
+import { useClerkSync } from "@/hooks/useClerkSync";
 
 const SellPage = () => {
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user } = useClerkSync();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -26,10 +28,10 @@ const SellPage = () => {
     category: "",
     location: "",
     whatsappNumber: "",
-    imageUrl: ""
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
 
   const handleInputChange = (field: string, value: string) => {
@@ -42,25 +44,18 @@ const SellPage = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        const result = reader.result as string;
-        setImagePreview(result);
-        setFormData(prev => ({
-          ...prev,
-          imageUrl: result
-        }));
+        setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
   };
 
   const removeImage = () => {
+    setImageFile(null);
     setImagePreview("");
-    setFormData(prev => ({
-      ...prev,
-      imageUrl: ""
-    }));
   };
 
   const validateForm = () => {
@@ -120,7 +115,6 @@ const SellPage = () => {
       return false;
     }
 
-    // Basic WhatsApp number validation
     const cleanNumber = whatsappNumber.replace(/\D/g, '');
     if (cleanNumber.length < 10) {
       toast({
@@ -143,6 +137,17 @@ const SellPage = () => {
     setIsLoading(true);
 
     try {
+      let imageUrl: string | undefined;
+
+      // Upload image if provided
+      if (imageFile) {
+        const uploadResult = await uploadImageToSupabase(imageFile);
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.error || 'Failed to upload image');
+        }
+        imageUrl = uploadResult.url;
+      }
+
       const uniqueId = generateProductId();
       
       const newProduct: Product = {
@@ -154,7 +159,7 @@ const SellPage = () => {
         category: formData.category as any,
         location: formData.location,
         whatsappNumber: formData.whatsappNumber.trim(),
-        imageUrl: formData.imageUrl || undefined,
+        imageUrl,
         userId: user.id,
         userEmail: user.emailAddresses[0]?.emailAddress || '',
         userName: user.fullName || user.firstName || 'Anonymous',

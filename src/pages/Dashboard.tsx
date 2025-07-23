@@ -1,14 +1,18 @@
+
 import { useNavigate } from "react-router-dom";
-import { useUser } from "@clerk/clerk-react";
 import { ShoppingBag, PlusCircle, List, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useClerkSync } from "@/hooks/useClerkSync";
+import { useStats } from "@/hooks/useStats";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user } = useClerkSync();
+  const { stats, loading } = useStats();
+  
   const isAdmin = user?.emailAddresses[0]?.emailAddress === 'abhinavpadige06@gmail.com' ||
                    user?.emailAddresses[0]?.emailAddress === 'admin@mycampuscart.com';
 
@@ -88,21 +92,27 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* Quick Stats */}
+          {/* Real Stats */}
           <div className="mt-12 p-6 bg-card rounded-lg border">
-            <h2 className="text-2xl font-bold mb-4">Quick Stats</h2>
+            <h2 className="text-2xl font-bold mb-4">Platform Statistics</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
               <div>
-                <div className="text-3xl font-bold text-primary">1000+</div>
+                <div className="text-3xl font-bold text-primary">
+                  {loading ? '...' : stats.totalProducts}
+                </div>
                 <div className="text-muted-foreground">Total Products</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-green-500">500+</div>
-                <div className="text-muted-foreground">Active Sellers</div>
+                <div className="text-3xl font-bold text-green-500">
+                  {loading ? '...' : stats.activeUsers}
+                </div>
+                <div className="text-muted-foreground">Active Users</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-blue-500">3</div>
-                <div className="text-muted-foreground">Cities Covered</div>
+                <div className="text-3xl font-bold text-blue-500">
+                  {loading ? '...' : stats.productsSold}
+                </div>
+                <div className="text-muted-foreground">Items Sold</div>
               </div>
             </div>
           </div>
