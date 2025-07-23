@@ -1,3 +1,4 @@
+
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { ClerkProvider } from "@clerk/clerk-react";
@@ -10,8 +11,8 @@ import "./index.css";
 
 const queryClient = new QueryClient();
 
-// Clerk publishable key
-const CLERK_PUBLISHABLE_KEY = "pk_test_ZXF1YWwtcGFuZ29saW4tNzYuY2xlcmsuYWNjb3VudHMuZGV2JA";
+// Updated Clerk publishable key
+const CLERK_PUBLISHABLE_KEY = "pk_test_ZmFtb3VzLXdhbHJ1cy0yMS5jbGVyay5hY2NvdW50cy5kZXYk";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
