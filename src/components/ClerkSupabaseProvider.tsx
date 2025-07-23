@@ -18,7 +18,7 @@ export const ClerkSupabaseProvider = ({ children }: { children: React.ReactNode 
             });
           }
         } catch (error) {
-          console.error('Error setting up Supabase auth:', error);
+          console.log('Supabase JWT template not configured in Clerk, skipping token setup');
         }
       }
     };

@@ -18,8 +18,13 @@ export const useClerkSync = () => {
       try {
         console.log('Syncing user:', user.id);
         
-        // Get Clerk session token for Supabase
-        const token = await getToken({ template: 'supabase' });
+        // Try to get Clerk session token for Supabase (if configured)
+        let token = null;
+        try {
+          token = await getToken({ template: 'supabase' });
+        } catch (error) {
+          console.log('Supabase JWT template not configured in Clerk, proceeding without token');
+        }
         
         if (token) {
           // Set custom auth header for Supabase
