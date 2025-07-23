@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { useUser, useAuth } from '@clerk/clerk-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, setSupabaseAuth } from '@/integrations/supabase/client';
 
 export const useClerkSync = () => {
   const { user, isLoaded } = useUser();
@@ -27,11 +27,8 @@ export const useClerkSync = () => {
         }
         
         if (token) {
-          // Set custom auth header for Supabase
-          await supabase.auth.setSession({
-            access_token: token,
-            refresh_token: token,
-          });
+          // Set custom auth for Supabase using safer method
+          await setSupabaseAuth(token);
         }
 
         // Check if user exists first

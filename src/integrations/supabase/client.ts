@@ -12,15 +12,29 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
-    persistSession: false, // We'll handle auth through Clerk
-    autoRefreshToken: false,
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
   }
 });
 
 // Function to set custom auth for Clerk users
 export const setSupabaseAuth = async (clerkToken: string) => {
-  await supabase.auth.setSession({
-    access_token: clerkToken,
-    refresh_token: clerkToken,
-  });
+  try {
+    // Create a custom session object that doesn't conflict with reserved claims
+    const customSession = {
+      access_token: clerkToken,
+      refresh_token: clerkToken,
+      token_type: 'bearer',
+      expires_in: 3600,
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+    };
+
+    const { error } = await supabase.auth.setSession(customSession);
+    if (error) {
+      console.error('Error setting Supabase session:', error);
+    }
+  } catch (error) {
+    console.error('Error in setSupabaseAuth:', error);
+  }
 };
