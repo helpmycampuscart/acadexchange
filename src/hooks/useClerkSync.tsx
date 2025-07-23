@@ -17,50 +17,28 @@ export const useClerkSync = () => {
       try {
         console.log('Syncing user:', user.id);
         
-        // Check if user exists in our database
-        const { data: existingUser, error: fetchError } = await supabase
-          .from('users')
-          .select('id')
-          .eq('id', user.id)
-          .single();
-
-        if (fetchError && fetchError.code !== 'PGRST116') {
-          console.error('Error checking existing user:', fetchError);
-          setIsReady(true);
-          return;
+        // Get Clerk session token for Supabase
+        const token = await user.getToken({ template: 'supabase' });
+        
+        if (token) {
+          // Set custom auth header for Supabase
+          supabase.auth.setSession({
+            access_token: token,
+            refresh_token: token,
+          });
         }
 
-        if (!existingUser) {
-          console.log('Creating new user record');
-          // Insert new user
-          const { error } = await supabase
-            .from('users')
-            .insert({
-              id: user.id,
-              email: user.emailAddresses[0]?.emailAddress || '',
-              name: user.fullName || user.firstName || 'Anonymous',
-              role: 'user'
-            });
+        // Use the sync function from our database
+        const { error } = await supabase.rpc('sync_clerk_user', {
+          clerk_user_id: user.id,
+          user_email: user.emailAddresses[0]?.emailAddress || '',
+          user_name: user.fullName || user.firstName || 'Anonymous'
+        });
 
-          if (error) {
-            console.error('Error creating user:', error);
-          } else {
-            console.log('User created successfully');
-          }
+        if (error) {
+          console.error('Error syncing user:', error);
         } else {
-          console.log('Updating existing user');
-          // Update existing user's info
-          const { error } = await supabase
-            .from('users')
-            .update({
-              email: user.emailAddresses[0]?.emailAddress || '',
-              name: user.fullName || user.firstName || 'Anonymous'
-            })
-            .eq('id', user.id);
-
-          if (error) {
-            console.error('Error updating user:', error);
-          }
+          console.log('User synced successfully');
         }
         
         setIsReady(true);

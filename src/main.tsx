@@ -1,57 +1,29 @@
-
-import { createRoot } from 'react-dom/client'
-import { ClerkProvider } from '@clerk/clerk-react'
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { ClerkProvider } from "@clerk/clerk-react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter } from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
+import { ClerkSupabaseProvider } from "@/components/ClerkSupabaseProvider";
+import App from "./App";
 import "./index.css";
 
-import { Toaster } from "@/components/ui/toaster";
-import ProtectedRoute from "@/components/ProtectedRoute";
+const queryClient = new QueryClient();
 
-import Index from "./pages/Index.tsx";
-import HomePage from "./pages/HomePage.tsx";
-import Marketplace from "./pages/Marketplace.tsx";
-import Dashboard from "./pages/Dashboard.tsx";
-import SellPage from "./pages/SellPage.tsx";
-import MyListings from "./pages/MyListings.tsx";
-import AdminPanel from "./pages/AdminPanel.tsx";
-import NotFound from "./pages/NotFound.tsx";
-
-const PUBLISHABLE_KEY = "pk_test_ZmFtb3VzLXdhbHJ1cy0yMS5jbGVyay5hY2NvdW50cy5kZXYk"
-
-if (!PUBLISHABLE_KEY) {
-  throw new Error("Missing Clerk Publishable Key")
-}
+// Clerk publishable key
+const CLERK_PUBLISHABLE_KEY = "pk_test_ZXF1YWwtcGFuZ29saW4tNzYuY2xlcmsuYWNjb3VudHMuZGV2JA";
 
 createRoot(document.getElementById("root")!).render(
-  <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/home" element={<HomePage />} />
-        <Route path="/marketplace" element={<Marketplace />} />
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="/sell" element={
-          <ProtectedRoute>
-            <SellPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/my-listings" element={
-          <ProtectedRoute>
-            <MyListings />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin" element={
-          <ProtectedRoute adminOnly>
-            <AdminPanel />
-          </ProtectedRoute>
-        } />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      <Toaster />
-    </BrowserRouter>
-  </ClerkProvider>
+  <StrictMode>
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
+      <ClerkSupabaseProvider>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <App />
+            <Toaster />
+          </BrowserRouter>
+        </QueryClientProvider>
+      </ClerkSupabaseProvider>
+    </ClerkProvider>
+  </StrictMode>
 );
