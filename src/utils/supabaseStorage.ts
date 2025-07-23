@@ -44,9 +44,11 @@ const sanitizeInput = (input: string): string => {
 // Product operations with Supabase
 export const saveProductToSupabase = async (product: Product): Promise<{ success: boolean; error?: string }> => {
   try {
+    console.log('Validating product data...');
     // Validate product data
     const validation = validateProduct(product);
     if (!validation.valid) {
+      console.error('Validation failed:', validation.error);
       return { success: false, error: validation.error };
     }
 
@@ -61,6 +63,7 @@ export const saveProductToSupabase = async (product: Product): Promise<{ success
       userName: sanitizeInput(product.userName)
     };
 
+    console.log('Inserting product into database...');
     const { error } = await supabase
       .from('products')
       .insert({
@@ -80,10 +83,11 @@ export const saveProductToSupabase = async (product: Product): Promise<{ success
       });
 
     if (error) {
-      console.error('Error saving product:', error);
-      return { success: false, error: error.message };
+      console.error('Database error saving product:', error);
+      return { success: false, error: `Database error: ${error.message}` };
     }
 
+    console.log('Product saved successfully');
     return { success: true };
   } catch (error) {
     console.error('Unexpected error saving product:', error);

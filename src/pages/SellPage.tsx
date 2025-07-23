@@ -18,7 +18,7 @@ import { useClerkSync } from "@/hooks/useClerkSync";
 
 const SellPage = () => {
   const navigate = useNavigate();
-  const { user } = useClerkSync();
+  const { user, isLoaded, isReady } = useClerkSync();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -132,23 +132,34 @@ const SellPage = () => {
     e.preventDefault();
     
     if (!validateForm()) return;
-    if (!user) return;
+    if (!user || !isReady) {
+      toast({
+        title: "Authentication Error",
+        description: "Please wait for authentication to complete",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setIsLoading(true);
 
     try {
+      console.log('Starting product submission...');
       let imageUrl: string | undefined;
 
       // Upload image if provided
       if (imageFile) {
+        console.log('Uploading image...');
         const uploadResult = await uploadImageToSupabase(imageFile);
         if (!uploadResult.success) {
           throw new Error(uploadResult.error || 'Failed to upload image');
         }
         imageUrl = uploadResult.url;
+        console.log('Image uploaded successfully:', imageUrl);
       }
 
       const uniqueId = generateProductId();
+      console.log('Generated unique ID:', uniqueId);
       
       const newProduct: Product = {
         id: Date.now().toString(),
@@ -167,6 +178,7 @@ const SellPage = () => {
         isSold: false
       };
 
+      console.log('Saving product to database...');
       const result = await saveProductToSupabase(newProduct);
       
       if (result.success) {
@@ -179,15 +191,31 @@ const SellPage = () => {
         throw new Error(result.error || 'Failed to save product');
       }
     } catch (error) {
+      console.error('Error submitting product:', error);
       toast({
         title: "Error",
-        description: "Failed to list your product. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to list your product. Please try again.",
         variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (!isLoaded || !isReady) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-lg">Loading...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!user) {
     return (

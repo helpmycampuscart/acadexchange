@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { useUser } from '@clerk/clerk-react';
 
 // Allowed file types for security
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -8,6 +7,8 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export const uploadImageToSupabase = async (file: File): Promise<{ success: boolean; url?: string; error?: string }> => {
   try {
+    console.log('Starting image upload...');
+    
     // Validate file type
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
       return { success: false, error: 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.' };
@@ -19,14 +20,16 @@ export const uploadImageToSupabase = async (file: File): Promise<{ success: bool
     }
 
     // Get current user ID for folder organization
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error('Authentication error:', userError);
       return { success: false, error: 'User not authenticated' };
     }
 
     const fileExt = file.name.split('.').pop();
     const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
 
+    console.log('Uploading file:', fileName);
     const { data, error } = await supabase.storage
       .from('product-images')
       .upload(fileName, file, {
@@ -36,13 +39,15 @@ export const uploadImageToSupabase = async (file: File): Promise<{ success: bool
 
     if (error) {
       console.error('Upload error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: `Upload failed: ${error.message}` };
     }
 
+    console.log('Getting public URL...');
     const { data: { publicUrl } } = supabase.storage
       .from('product-images')
       .getPublicUrl(fileName);
 
+    console.log('Upload successful:', publicUrl);
     return { success: true, url: publicUrl };
   } catch (error) {
     console.error('Unexpected upload error:', error);
