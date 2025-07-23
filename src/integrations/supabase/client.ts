@@ -18,23 +18,42 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// Function to set custom auth for Clerk users
-export const setSupabaseAuth = async (clerkToken: string) => {
+// Simple function to sync user data without JWT tokens
+export const syncUserWithSupabase = async (userId: string, email: string, name: string) => {
   try {
-    // Create a custom session object that doesn't conflict with reserved claims
-    const customSession = {
-      access_token: clerkToken,
-      refresh_token: clerkToken,
-      token_type: 'bearer',
-      expires_in: 3600,
-      expires_at: Math.floor(Date.now() / 1000) + 3600,
-    };
+    console.log('Syncing user with Supabase:', userId);
+    
+    // Check if user exists first
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .single();
 
-    const { error } = await supabase.auth.setSession(customSession);
-    if (error) {
-      console.error('Error setting Supabase session:', error);
+    if (!existingUser) {
+      console.log('Creating new user record');
+      const { error } = await supabase
+        .from('users')
+        .insert({
+          id: userId,
+          email: email,
+          name: name,
+          role: 'user'
+        });
+
+      if (error) {
+        console.error('Error creating user:', error);
+        return { success: false, error: error.message };
+      } else {
+        console.log('User created successfully');
+        return { success: true };
+      }
+    } else {
+      console.log('User already exists');
+      return { success: true };
     }
   } catch (error) {
-    console.error('Error in setSupabaseAuth:', error);
+    console.error('Error syncing user:', error);
+    return { success: false, error: 'Failed to sync user' };
   }
 };
