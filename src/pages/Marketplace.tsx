@@ -1,13 +1,16 @@
+
 import { useState, useEffect } from "react";
-import { Search, Filter, MapPin } from "lucide-react";
+import { Search, Filter, MapPin, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import ProductCard from "@/components/ProductCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Product, CATEGORIES, LOCATIONS } from "@/types";
+import { getProductsFromSupabase } from "@/utils/supabaseStorage";
 import { getProducts } from "@/utils/storage";
 
 const Marketplace = () => {
@@ -17,6 +20,8 @@ const Marketplace = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     loadProducts();
@@ -26,16 +31,55 @@ const Marketplace = () => {
     filterProducts();
   }, [products, searchTerm, selectedCategory, selectedLocation]);
 
-  const loadProducts = () => {
+  const loadProducts = async () => {
     setLoading(true);
+    setError(null);
+    
     try {
-      const allProducts = getProducts();
-      setProducts(allProducts);
+      console.log('Attempting to fetch products from Supabase...');
+      // First try Supabase
+      const supabaseProducts = await getProductsFromSupabase();
+      console.log('Supabase products:', supabaseProducts);
+      
+      if (supabaseProducts && supabaseProducts.length > 0) {
+        setProducts(supabaseProducts);
+        console.log('Successfully loaded products from Supabase');
+      } else {
+        // Fallback to localStorage
+        console.log('No products from Supabase, trying localStorage...');
+        const localProducts = getProducts();
+        console.log('Local products:', localProducts);
+        setProducts(localProducts);
+        
+        if (localProducts.length === 0) {
+          setError('No products found. Try adding some products first!');
+        }
+      }
     } catch (error) {
       console.error('Error loading products:', error);
+      
+      // Fallback to localStorage on network error
+      try {
+        const localProducts = getProducts();
+        setProducts(localProducts);
+        
+        if (localProducts.length === 0) {
+          setError('Network error: Unable to connect to server. No offline products available.');
+        } else {
+          setError('Network error: Showing offline products only. Some products may be outdated.');
+        }
+      } catch (localError) {
+        console.error('Error loading local products:', localError);
+        setError('Unable to load products. Please check your internet connection and try again.');
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    loadProducts();
   };
 
   const filterProducts = () => {
@@ -91,6 +135,19 @@ const Marketplace = () => {
             Discover amazing deals from fellow students
           </p>
         </div>
+
+        {/* Error Alert */}
+        {error && (
+          <Alert className="mb-6">
+            <AlertDescription className="flex items-center justify-between">
+              <span>{error}</span>
+              <Button variant="outline" size="sm" onClick={handleRetry} className="ml-4">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Filters */}
         <div className="mb-8 space-y-4">
@@ -175,6 +232,7 @@ const Marketplace = () => {
         <div className="mb-6">
           <p className="text-muted-foreground">
             {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
+            {error && products.length > 0 && ' (offline mode)'}
           </p>
         </div>
 
@@ -207,11 +265,22 @@ const Marketplace = () => {
             <div className="text-6xl mb-4">🔍</div>
             <h3 className="text-2xl font-semibold mb-2">No products found</h3>
             <p className="text-muted-foreground mb-6">
-              Try adjusting your search or filters to find what you're looking for.
+              {error 
+                ? "Unable to load products. Please check your connection and try again."
+                : "Try adjusting your search or filters to find what you're looking for."
+              }
             </p>
-            <Button onClick={clearFilters} variant="outline">
-              Clear all filters
-            </Button>
+            <div className="space-x-4">
+              <Button onClick={clearFilters} variant="outline">
+                Clear all filters
+              </Button>
+              {error && (
+                <Button onClick={handleRetry}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Retry Loading
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </div>
