@@ -1,13 +1,16 @@
+
 import { useState } from "react";
 import { MessageCircle, MapPin, Calendar, CheckCircle, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { BackgroundGradient } from "@/components/ui/background-gradient";
 import { Product } from "@/types";
 import { useUser } from "@clerk/clerk-react";
 import { updateProductInSupabase } from "@/utils/supabaseStorage";
 import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
 
 interface ProductCardProps {
   product: Product;
@@ -67,111 +70,138 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
   };
 
   return (
-    <Card className={`hover-lift transition-all duration-300 ${product.isSold ? 'opacity-75' : ''}`}>
-      <CardHeader className="space-y-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-2">
-            <Badge variant={product.isSold ? "secondary" : "default"}>
-              {product.category}
-            </Badge>
-            {product.isSold && (
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Sold
-              </Badge>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      whileHover={{ y: -5 }}
+      className="h-full"
+    >
+      <BackgroundGradient className="rounded-[22px] p-4 bg-card h-full" animate={!product.isSold}>
+        <Card className={`border-0 shadow-none bg-transparent h-full flex flex-col ${product.isSold ? 'opacity-75' : ''}`}>
+          <CardHeader className="space-y-3 flex-shrink-0">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-2">
+                <Badge variant={product.isSold ? "secondary" : "default"} className="animate-pulse">
+                  {product.category}
+                </Badge>
+                {product.isSold && (
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Sold
+                  </Badge>
+                )}
+              </div>
+              
+              {showActions && (isOwner || isAdmin) && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {isOwner && (
+                      <>
+                        <DropdownMenuItem onClick={() => onEdit?.(product)}>
+                          Edit Product
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={handleMarkAsSold}
+                          disabled={isUpdating}
+                        >
+                          {product.isSold ? 'Mark as Available' : 'Mark as Sold'}
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    {(isOwner || isAdmin) && (
+                      <DropdownMenuItem 
+                        onClick={() => onDelete?.(product.id)}
+                        className="text-red-600"
+                      >
+                        Delete Product
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+
+            {product.imageUrl && (
+              <motion.div 
+                className="aspect-video overflow-hidden rounded-lg"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              </motion.div>
             )}
-          </div>
-          
-          {showActions && (isOwner || isAdmin) && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MoreVertical className="h-4 w-4" />
+          </CardHeader>
+
+          <CardContent className="space-y-3 flex-grow">
+            <div>
+              <h3 className="font-semibold text-lg leading-tight mb-1">
+                {product.name}
+              </h3>
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {product.description}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <motion.div 
+                className="text-2xl font-bold text-primary"
+                whileHover={{ scale: 1.05 }}
+              >
+                ₹{product.price.toLocaleString()}
+              </motion.div>
+              {!product.isSold && (
+                <Button 
+                  size="sm" 
+                  onClick={handleWhatsAppClick}
+                  className="flex items-center space-x-1 hover:scale-105 transition-transform"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  <span>Contact</span>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {isOwner && (
-                  <>
-                    <DropdownMenuItem onClick={() => onEdit?.(product)}>
-                      Edit Product
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={handleMarkAsSold}
-                      disabled={isUpdating}
-                    >
-                      {product.isSold ? 'Mark as Available' : 'Mark as Sold'}
-                    </DropdownMenuItem>
-                  </>
-                )}
-                {(isOwner || isAdmin) && (
-                  <DropdownMenuItem 
-                    onClick={() => onDelete?.(product.id)}
-                    className="text-red-600"
-                  >
-                    Delete Product
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
+              )}
+            </div>
 
-        {product.imageUrl && (
-          <div className="aspect-video overflow-hidden rounded-lg">
-            <img
-              src={product.imageUrl}
-              alt={product.name}
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-            />
-          </div>
-        )}
-      </CardHeader>
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <motion.div 
+                className="flex items-center space-x-2"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <MapPin className="h-4 w-4" />
+                <span>{product.location}</span>
+              </motion.div>
+              <motion.div 
+                className="flex items-center space-x-2"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Calendar className="h-4 w-4" />
+                <span>Listed on {formatDate(product.createdAt)}</span>
+              </motion.div>
+            </div>
+          </CardContent>
 
-      <CardContent className="space-y-3">
-        <div>
-          <h3 className="font-semibold text-lg leading-tight mb-1">
-            {product.name}
-          </h3>
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {product.description}
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="text-2xl font-bold text-primary">
-            ₹{product.price.toLocaleString()}
-          </div>
-          {!product.isSold && (
-            <Button 
-              size="sm" 
-              onClick={handleWhatsAppClick}
-              className="flex items-center space-x-1"
-            >
-              <MessageCircle className="h-4 w-4" />
-              <span>Contact</span>
-            </Button>
-          )}
-        </div>
-
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <div className="flex items-center space-x-2">
-            <MapPin className="h-4 w-4" />
-            <span>{product.location}</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Calendar className="h-4 w-4" />
-            <span>Listed on {formatDate(product.createdAt)}</span>
-          </div>
-        </div>
-      </CardContent>
-
-      <CardFooter className="pt-0">
-        <div className="text-xs text-muted-foreground">
-          <p>Product ID: {product.uniqueId}</p>
-          <p>Seller: {product.userName}</p>
-        </div>
-      </CardFooter>
-    </Card>
+          <CardFooter className="pt-0 flex-shrink-0">
+            <div className="text-xs text-muted-foreground">
+              <p>Product ID: {product.uniqueId}</p>
+              <p>Seller: {product.userName}</p>
+            </div>
+          </CardFooter>
+        </Card>
+      </BackgroundGradient>
+    </motion.div>
   );
 };
 
