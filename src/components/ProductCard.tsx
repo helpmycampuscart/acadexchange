@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MessageCircle, MapPin, Calendar, CheckCircle, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -74,11 +73,15 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      whileHover={{ y: -5 }}
+      whileHover={{ y: -8 }}
       className="h-full"
     >
-      <BackgroundGradient className="rounded-[22px] p-4 bg-card h-full" animate={!product.isSold}>
-        <Card className={`border-0 shadow-none bg-transparent h-full flex flex-col ${product.isSold ? 'opacity-75' : ''}`}>
+      <BackgroundGradient 
+        className="rounded-[22px] p-1 h-full" 
+        animate={!product.isSold}
+        containerClassName="h-full"
+      >
+        <Card className={`border-0 shadow-none bg-card/95 backdrop-blur-md h-full flex flex-col ${product.isSold ? 'opacity-75' : ''}`}>
           <CardHeader className="space-y-3 flex-shrink-0">
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-2">
@@ -130,7 +133,7 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
             {product.imageUrl && (
               <motion.div 
                 className="aspect-video overflow-hidden rounded-lg"
-                whileHover={{ scale: 1.02 }}
+                whileHover={{ scale: 1.03 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
                 <img
@@ -142,9 +145,9 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
             )}
           </CardHeader>
 
-          <CardContent className="space-y-3 flex-grow">
+          <CardContent className="space-y-4 flex-grow">
             <div>
-              <h3 className="font-semibold text-lg leading-tight mb-1">
+              <h3 className="font-semibold text-lg leading-tight mb-2">
                 {product.name}
               </h3>
               <p className="text-sm text-muted-foreground line-clamp-2">
@@ -154,7 +157,7 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
 
             <div className="flex items-center justify-between">
               <motion.div 
-                className="text-2xl font-bold text-primary"
+                className="text-2xl font-bold gradient-text"
                 whileHover={{ scale: 1.05 }}
               >
                 ₹{product.price.toLocaleString()}
@@ -163,7 +166,7 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
                 <Button 
                   size="sm" 
                   onClick={handleWhatsAppClick}
-                  className="flex items-center space-x-1 hover:scale-105 transition-transform"
+                  className="flex items-center space-x-2 hover:scale-105 transition-transform premium-button"
                 >
                   <MessageCircle className="h-4 w-4" />
                   <span>Contact</span>
@@ -178,7 +181,7 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <MapPin className="h-4 w-4" />
+                <MapPin className="h-4 w-4 text-primary" />
                 <span>{product.location}</span>
               </motion.div>
               <motion.div 
@@ -187,16 +190,18 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                <Calendar className="h-4 w-4" />
+                <Calendar className="h-4 w-4 text-primary" />
                 <span>Listed on {formatDate(product.createdAt)}</span>
               </motion.div>
             </div>
           </CardContent>
 
           <CardFooter className="pt-0 flex-shrink-0">
-            <div className="text-xs text-muted-foreground">
-              <p>Product ID: {product.uniqueId}</p>
-              <p>Seller: {product.userName}</p>
+            <div className="text-xs text-muted-foreground w-full">
+              <div className="flex justify-between items-center">
+                <span>ID: {product.uniqueId}</span>
+                <span className="font-medium">By {product.userName}</span>
+              </div>
             </div>
           </CardFooter>
         </Card>
