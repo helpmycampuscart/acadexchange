@@ -8,7 +8,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useStats } from "@/hooks/useStats";
 import { motion } from "framer-motion";
-import { LampContainer } from "@/components/ui/lamp";
+import SparklesPreview from "@/components/sparkles-demo";
+import WorldMapDemo from "@/components/world-map-demo";
 
 const HomePage = () => {
   const { stats } = useStats();
@@ -17,36 +18,28 @@ const HomePage = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      {/* Hero Section with Lamp */}
+      {/* Hero Section with Sparkles */}
       <section className="relative">
-        <LampContainer className="min-h-screen">
-          <motion.div
-            initial={{ opacity: 0.5, y: 100 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{
-              delay: 0.3,
-              duration: 0.8,
-              ease: "easeInOut",
-            }}
-            className="text-center px-4"
-          >
-            <h1 className="text-4xl md:text-7xl font-bold gradient-text mb-6">
-              MyCampusCart
-            </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              The simplest way to buy and sell on campus
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="clean-button">
-                Start Shopping
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="lg">
-                Sell Your Items
-              </Button>
-            </div>
-          </motion.div>
-        </LampContainer>
+        <SparklesPreview />
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+          className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-center px-4"
+        >
+          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            The simplest way to buy and sell on campus
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg">
+              Start Shopping
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="lg">
+              Sell Your Items
+            </Button>
+          </div>
+        </motion.div>
       </section>
 
       {/* Stats Section */}
@@ -90,6 +83,9 @@ const HomePage = () => {
         </div>
       </section>
 
+      {/* World Map Section */}
+      <WorldMapDemo />
+
       {/* Features Section */}
       <section className="py-16 px-4">
         <div className="container mx-auto">
@@ -110,7 +106,7 @@ const HomePage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <Card className="glass-card simple-hover h-full">
+              <Card className="h-full border-border/50 bg-card/50 backdrop-blur">
                 <CardContent className="p-6 text-center">
                   <Package className="h-12 w-12 text-primary mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2">Easy Selling</h3>
@@ -126,7 +122,7 @@ const HomePage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <Card className="glass-card simple-hover h-full">
+              <Card className="h-full border-border/50 bg-card/50 backdrop-blur">
                 <CardContent className="p-6 text-center">
                   <Users className="h-12 w-12 text-primary mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2">Campus Community</h3>
@@ -142,7 +138,7 @@ const HomePage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <Card className="glass-card simple-hover h-full">
+              <Card className="h-full border-border/50 bg-card/50 backdrop-blur">
                 <CardContent className="p-6 text-center">
                   <ShoppingBag className="h-12 w-12 text-primary mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2">Great Deals</h3>
@@ -191,7 +187,7 @@ const HomePage = () => {
       <section className="py-16 px-4">
         <div className="container mx-auto">
           <motion.div 
-            className="text-center glass-card p-8 max-w-2xl mx-auto minimal-glow"
+            className="text-center border border-border/50 bg-card/50 backdrop-blur p-8 max-w-2xl mx-auto rounded-lg"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
@@ -200,7 +196,7 @@ const HomePage = () => {
               Join thousands of students already using MyCampusCart
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="clean-button">
+              <Button size="lg">
                 Browse Products
               </Button>
               <Button variant="outline" size="lg">
