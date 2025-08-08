@@ -3,101 +3,89 @@
 @tailwind components;
 @tailwind utilities;
 
-/* MyCampusCart Design System - Dark Lamp Theme */
+/* MyCampusCart Design System - Minimalistic Theme */
 
 @layer base {
   :root {
-    /* Dark theme matching lamp design */
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    /* Clean dark theme */
+    --background: 220 13% 8%;
+    --foreground: 220 9% 90%;
 
-    --card: 222 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 13% 10%;
+    --card-foreground: 220 9% 90%;
 
-    --popover: 222 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 13% 10%;
+    --popover-foreground: 220 9% 90%;
 
-    /* Cyan primary to match lamp glow */
-    --primary: 188 90% 50%;
-    --primary-foreground: 222 84% 4.9%;
+    /* Simple cyan accent */
+    --primary: 180 100% 50%;
+    --primary-foreground: 220 13% 8%;
 
-    --secondary: 217 32% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 220 13% 15%;
+    --secondary-foreground: 220 9% 90%;
 
-    --muted: 217 32% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 220 13% 15%;
+    --muted-foreground: 220 9% 60%;
 
-    --accent: 217 32% 17%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 220 13% 15%;
+    --accent-foreground: 220 9% 90%;
 
     --destructive: 0 62% 50%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 220 9% 90%;
 
-    --border: 217 32% 17%;
-    --input: 217 32% 17%;
-    --ring: 188 90% 50%;
+    --border: 220 13% 20%;
+    --input: 220 13% 15%;
+    --ring: 180 100% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    /* Enhanced gradients for lamp theme */
-    --gradient-primary: linear-gradient(135deg, hsl(188 90% 50%), hsl(195 90% 55%), hsl(202 90% 60%));
-    --gradient-card: linear-gradient(135deg, hsl(222 84% 4.9%), hsl(217 32% 17%), hsl(222 47% 11%));
-    --gradient-hero: linear-gradient(135deg, hsl(188 90% 50% / 0.1), hsl(195 90% 55% / 0.05));
-    --gradient-accent: linear-gradient(45deg, hsl(188 90% 50% / 0.8), hsl(202 90% 60% / 0.8));
-    --shadow-primary: 0 10px 30px -10px hsl(188 90% 50% / 0.3);
-    --shadow-card: 0 8px 32px hsl(222 84% 4.9% / 0.8);
-    --shadow-glow: 0 0 40px hsl(188 90% 50% / 0.4);
-    --shadow-elegant: 0 20px 60px -10px hsl(188 90% 50% / 0.3);
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-
-    --sidebar-background: 222 84% 4.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 188 90% 50%;
-    --sidebar-primary-foreground: 222 84% 4.9%;
-    --sidebar-accent: 217 32% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 32% 17%;
-    --sidebar-ring: 188 90% 50%;
+    --sidebar-background: 220 13% 10%;
+    --sidebar-foreground: 220 9% 90%;
+    --sidebar-primary: 180 100% 50%;
+    --sidebar-primary-foreground: 220 13% 8%;
+    --sidebar-accent: 220 13% 15%;
+    --sidebar-accent-foreground: 220 9% 90%;
+    --sidebar-border: 220 13% 20%;
+    --sidebar-ring: 180 100% 50%;
   }
 
   .light {
     --background: 0 0% 100%;
-    --foreground: 222 84% 4.9%;
+    --foreground: 220 13% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 84% 4.9%;
+    --card-foreground: 220 13% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 84% 4.9%;
+    --popover-foreground: 220 13% 8%;
 
-    --primary: 188 90% 50%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 180 100% 40%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 220 13% 95%;
+    --secondary-foreground: 220 13% 8%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 220 13% 95%;
+    --muted-foreground: 220 13% 45%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 220 13% 95%;
+    --accent-foreground: 220 13% 8%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 188 90% 50%;
+    --border: 220 13% 85%;
+    --input: 220 13% 95%;
+    --ring: 180 100% 40%;
     
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 84% 4.9%;
-    --sidebar-primary: 188 90% 50%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 210 40% 96%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 188 90% 50%;
+    --sidebar-foreground: 220 13% 8%;
+    --sidebar-primary: 180 100% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 13% 95%;
+    --sidebar-accent-foreground: 220 13% 8%;
+    --sidebar-border: 220 13% 85%;
+    --sidebar-ring: 180 100% 40%;
   }
 }
 
@@ -111,70 +99,24 @@
     font-family: 'Inter', system-ui, sans-serif;
   }
 
-  /* Enhanced UI Components with Lamp Theme */
+  /* Minimalistic UI Components */
   .glass-card {
-    @apply bg-card/90 backdrop-blur-md border border-border/50;
-    box-shadow: var(--shadow-card);
+    @apply bg-card/80 backdrop-blur border border-border/50 rounded-lg;
   }
 
-  .glow-effect {
-    box-shadow: var(--shadow-glow);
-    transition: var(--transition-smooth);
-  }
-
-  .hover-lift {
-    @apply transition-all duration-300;
-    &:hover {
-      transform: translateY(-4px);
-      box-shadow: var(--shadow-elegant);
-    }
+  .simple-hover {
+    @apply transition-all duration-200 hover:bg-accent hover:scale-105;
   }
 
   .gradient-text {
-    background: var(--gradient-primary);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-size: 200% 200%;
-    animation: gradient-shift 3s ease-in-out infinite;
+    @apply bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-transparent;
   }
 
-  @keyframes gradient-shift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
+  .clean-button {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 rounded-lg px-4 py-2 font-medium;
   }
 
-  .premium-button {
-    @apply relative overflow-hidden;
-    background: var(--gradient-primary);
-    transition: var(--transition-bounce);
-    
-    &:hover {
-      transform: scale(1.05);
-      box-shadow: var(--shadow-glow);
-    }
-
-    &:before {
-      content: '';
-      @apply absolute inset-0 opacity-0 transition-opacity duration-300;
-      background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
-      transform: translateX(-100%);
-    }
-
-    &:hover:before {
-      @apply opacity-100;
-      transform: translateX(100%);
-      transition: transform 0.6s ease;
-    }
-  }
-
-  .lamp-glow {
-    box-shadow: 0 0 50px hsl(188 90% 50% / 0.5), 
-                0 0 100px hsl(188 90% 50% / 0.3),
-                0 0 150px hsl(188 90% 50% / 0.1);
-  }
-
-  .text-glow {
-    text-shadow: 0 0 20px hsl(188 90% 50% / 0.5);
+  .minimal-glow {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.2);
   }
 }

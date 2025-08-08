@@ -1,9 +1,8 @@
 
-import { useNavigate } from "react-router-dom";
-import { ShoppingBag, PlusCircle, List, Settings } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Package, ShoppingBag, TrendingUp, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BackgroundGradient } from "@/components/ui/background-gradient";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useClerkSync } from "@/hooks/useClerkSync";
@@ -11,147 +10,171 @@ import { useStats } from "@/hooks/useStats";
 import { motion } from "framer-motion";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
-  const { user } = useClerkSync();
+  const { user, isLoaded, isReady } = useClerkSync();
   const { stats, loading } = useStats();
-  
-  const isAdmin = user?.emailAddresses[0]?.emailAddress === 'abhinavpadige06@gmail.com' ||
-                   user?.emailAddresses[0]?.emailAddress === 'admin@mycampuscart.com';
 
-  const actions = [
-    {
-      title: "Browse Marketplace",
-      description: "Discover amazing deals from fellow students",
-      icon: ShoppingBag,
-      action: () => navigate('/marketplace'),
-      gradient: "from-cyan-500 to-blue-500"
-    },
-    {
-      title: "Sell an Item",
-      description: "List your items and start earning",
-      icon: PlusCircle,
-      action: () => navigate('/sell'),
-      gradient: "from-emerald-500 to-cyan-500"
-    },
-    {
-      title: "My Listings",
-      description: "Manage your posted items",
-      icon: List,
-      action: () => navigate('/my-listings'),
-      gradient: "from-purple-500 to-cyan-500"
-    }
-  ];
+  if (!isLoaded || !isReady) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
-  if (isAdmin) {
-    actions.push({
-      title: "Admin Panel",
-      description: "Manage users and all listings",
-      icon: Settings,
-      action: () => navigate('/admin'),
-      gradient: "from-red-500 to-cyan-500"
-    });
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">Please sign in</h1>
+            <p className="text-muted-foreground">You need to be signed in to access the dashboard</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       
-      {/* Hero Section with Lamp Glow */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-background"></div>
-        <div className="container mx-auto px-6 py-16 relative">
+      <div className="flex-1 container mx-auto px-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <h1 className="text-3xl font-bold mb-2">
+            Welcome back, {user.firstName || 'Student'}!
+          </h1>
+          <p className="text-muted-foreground">
+            Your campus marketplace dashboard
+          </p>
+        </motion.div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
+            transition={{ delay: 0.1 }}
           >
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 gradient-text">
-              Welcome back, {user?.firstName || user?.emailAddresses[0]?.emailAddress?.split('@')[0] || 'Student'}! 
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Your campus marketplace dashboard - What would you like to do today?
-            </p>
+            <Card className="glass-card simple-hover">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total Products
+                </CardTitle>
+                <div className="text-2xl font-bold text-primary">
+                  {loading ? "..." : stats.totalProducts}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardContent>
+            </Card>
           </motion.div>
 
-          {/* Action Cards with Enhanced Design */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-            {actions.map((action, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
-              >
-                <BackgroundGradient className="rounded-[22px] p-1">
-                  <Card 
-                    className="glass-card hover-lift border-0 bg-card/95 backdrop-blur-md cursor-pointer group h-full"
-                    onClick={action.action}
-                  >
-                    <CardHeader className="text-center pb-6">
-                      <div className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-6 lamp-glow bg-gradient-to-r ${action.gradient} group-hover:scale-110 transition-transform duration-300`}>
-                        <action.icon className="h-10 w-10 text-white" />
-                      </div>
-                      <CardTitle className="text-2xl font-bold text-foreground group-hover:text-glow transition-all duration-300">
-                        {action.title}
-                      </CardTitle>
-                      <CardDescription className="text-muted-foreground text-base">
-                        {action.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <Button 
-                        className="w-full premium-button text-primary-foreground font-semibold py-3"
-                        size="lg"
-                      >
-                        Get Started
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </BackgroundGradient>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Enhanced Stats Section */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
+            transition={{ delay: 0.2 }}
           >
-            <BackgroundGradient className="rounded-[22px] p-1">
-              <Card className="glass-card border-0 bg-card/95 backdrop-blur-md">
-                <CardHeader>
-                  <CardTitle className="text-3xl font-bold gradient-text text-center">
-                    Platform Statistics
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="text-center group">
-                      <div className="text-5xl font-bold gradient-text mb-2 group-hover:text-glow transition-all duration-300">
-                        {loading ? '...' : stats.totalProducts}
-                      </div>
-                      <div className="text-muted-foreground font-medium">Total Products</div>
-                    </div>
-                    <div className="text-center group">
-                      <div className="text-5xl font-bold gradient-text mb-2 group-hover:text-glow transition-all duration-300">
-                        {loading ? '...' : stats.activeUsers}
-                      </div>
-                      <div className="text-muted-foreground font-medium">Active Users</div>
-                    </div>
-                    <div className="text-center group">
-                      <div className="text-5xl font-bold gradient-text mb-2 group-hover:text-glow transition-all duration-300">
-                        {loading ? '...' : stats.productsSold}
-                      </div>
-                      <div className="text-muted-foreground font-medium">Items Sold</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </BackgroundGradient>
+            <Card className="glass-card simple-hover">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Active Users
+                </CardTitle>
+                <div className="text-2xl font-bold text-primary">
+                  {loading ? "..." : stats.activeUsers}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="glass-card simple-hover">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Items Sold
+                </CardTitle>
+                <div className="text-2xl font-bold text-primary">
+                  {loading ? "..." : stats.productsSold}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardContent>
+            </Card>
           </motion.div>
         </div>
+
+        {/* Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>
+                What would you like to do today?
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Button
+                  variant="outline"
+                  className="h-24 flex-col simple-hover"
+                  onClick={() => window.location.href = '/sell'}
+                >
+                  <Plus className="h-6 w-6 mb-2" />
+                  Sell Item
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  className="h-24 flex-col simple-hover"
+                  onClick={() => window.location.href = '/marketplace'}
+                >
+                  <ShoppingBag className="h-6 w-6 mb-2" />
+                  Browse
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  className="h-24 flex-col simple-hover"
+                  onClick={() => window.location.href = '/my-listings'}
+                >
+                  <Package className="h-6 w-6 mb-2" />
+                  My Listings
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  className="h-24 flex-col simple-hover"
+                  onClick={() => window.location.href = '/marketplace'}
+                >
+                  <TrendingUp className="h-6 w-6 mb-2" />
+                  Trending
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       <Footer />

@@ -19,15 +19,9 @@ export const uploadImageToSupabase = async (file: File): Promise<{ success: bool
       return { success: false, error: 'File size too large. Maximum size is 10MB.' };
     }
 
-    // Get current user ID for folder organization
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      console.error('Authentication error:', userError);
-      return { success: false, error: 'User not authenticated' };
-    }
-
+    // Use a simple timestamp-based filename instead of user-based
     const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
 
     console.log('Uploading file:', fileName);
     const { data, error } = await supabase.storage
