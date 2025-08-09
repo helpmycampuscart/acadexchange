@@ -20,6 +20,7 @@ export interface User {
   email: string;
   name: string;
   role: 'user' | 'admin';
+  status?: 'active' | 'blocked';
   createdAt: string;
 }
 
