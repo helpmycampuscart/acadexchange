@@ -1,3 +1,4 @@
+
 import { Heart, Mail, MapPin } from "lucide-react";
 
 const Footer = () => {
@@ -45,7 +46,7 @@ const Footer = () => {
               <div className="flex items-center space-x-2 text-sm">
                 <MapPin className="h-4 w-4 text-primary" />
                 <span className="text-muted-foreground">
-                  Hyderabad, Pune, Bangalore
+                  Serving 100+ cities across India
                 </span>
               </div>
             </div>
@@ -56,7 +57,7 @@ const Footer = () => {
         <div className="border-t border-border pt-6 mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-sm text-muted-foreground">
-              © 2024 MyCampusCart. All rights reserved.
+              © 2025 MyCampusCart. All rights reserved.
             </div>
             <div className="flex space-x-6 text-sm text-muted-foreground">
               <span className="hover:text-foreground cursor-pointer">Privacy Policy</span>

@@ -56,9 +56,9 @@ const HomePage = () => {
               transition={{ delay: 0.3 }}
             >
               <div className="text-3xl font-bold text-primary mb-2">
-                {stats.productsSold}+
+                100+
               </div>
-              <div className="text-muted-foreground">Sold</div>
+              <div className="text-muted-foreground">Cities</div>
             </motion.div>
           </div>
         </div>
@@ -141,26 +141,42 @@ const HomePage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <h2 className="text-3xl font-bold mb-4">Available Cities</h2>
+            <h2 className="text-3xl font-bold mb-4">Available Across India</h2>
             <p className="text-muted-foreground">
-              Currently serving students in these cities
+              Serving students in 100+ cities across major states
             </p>
           </motion.div>
 
-          <div className="flex flex-wrap justify-center gap-4">
-            {['Hyderabad', 'Pune', 'Bangalore'].map((city, index) => (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 max-w-6xl mx-auto">
+            {[
+              'Delhi', 'Mumbai', 'Bangalore', 'Chennai', 'Hyderabad', 'Pune',
+              'Kolkata', 'Ahmedabad', 'Jaipur', 'Lucknow', 'Kanpur', 'Nagpur',
+              'Indore', 'Bhopal', 'Visakhapatnam', 'Vadodara', 'Coimbatore', 'Agra',
+              'Varanasi', 'Madurai', 'Meerut', 'Rajkot', 'Kota', 'Gwalior'
+            ].map((city, index) => (
               <motion.div
                 key={city}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: index * 0.05 }}
               >
-                <Badge variant="secondary" className="text-lg px-4 py-2">
+                <Badge variant="secondary" className="text-sm px-3 py-1 w-full justify-center">
                   {city}
                 </Badge>
               </motion.div>
             ))}
           </div>
+          
+          <motion.div 
+            className="text-center mt-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1 }}
+          >
+            <p className="text-muted-foreground text-sm">
+              ...and many more cities across India
+            </p>
+          </motion.div>
         </div>
       </section>
 
