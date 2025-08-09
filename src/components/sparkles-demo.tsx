@@ -10,20 +10,20 @@ export default function SparklesPreview() {
         MyCampusCart
       </h1>
       <div className="w-[40rem] h-40 relative">
-        {/* Gradients */}
+        {/* Gradients with green theme */}
         <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-primary to-transparent h-[2px] w-3/4 blur-sm" />
         <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-primary to-transparent h-px w-3/4" />
-        <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-cyan-400 to-transparent h-[5px] w-1/4 blur-sm" />
-        <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-cyan-400 to-transparent h-px w-1/4" />
+        <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-green-400 to-transparent h-[5px] w-1/4 blur-sm" />
+        <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-green-400 to-transparent h-px w-1/4" />
 
-        {/* Core component */}
+        {/* Core component with better visibility */}
         <SparklesCore
           background="transparent"
-          minSize={0.4}
-          maxSize={1}
-          particleDensity={1200}
+          minSize={0.6}
+          maxSize={1.4}
+          particleDensity={800}
           className="w-full h-full"
-          particleColor="hsl(var(--primary))"
+          particleColor="hsl(142, 76%, 36%)"
         />
 
         {/* Radial Gradient to prevent sharp edges */}

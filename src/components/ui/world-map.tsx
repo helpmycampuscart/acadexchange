@@ -15,16 +15,16 @@ interface MapProps {
 
 export default function WorldMap({
   dots = [],
-  lineColor = "#0ea5e9",
+  lineColor = "hsl(142, 76%, 36%)",
 }: MapProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const map = new DottedMap({ height: 100, grid: "diagonal" });
 
   const svgMap = map.getSVG({
     radius: 0.22,
-    color: "#FFFFFF40",
+    color: "hsl(220, 13%, 20%)",
     shape: "circle",
-    backgroundColor: "transparent",
+    backgroundColor: "hsl(220, 13%, 8%)",
   });
 
   const projectPoint = (lat: number, lng: number) => {
@@ -43,7 +43,7 @@ export default function WorldMap({
   };
 
   return (
-    <div className="w-full aspect-[2/1] bg-transparent rounded-lg relative font-sans">
+    <div className="w-full aspect-[2/1] bg-background rounded-lg relative font-sans">
       <img
         src={`data:image/svg+xml;utf8,${encodeURIComponent(svgMap)}`}
         className="h-full w-full [mask-image:linear-gradient(to_bottom,transparent,white_10%,white_90%,transparent)] pointer-events-none select-none"
@@ -66,7 +66,7 @@ export default function WorldMap({
                 d={createCurvedPath(startPoint, endPoint)}
                 fill="none"
                 stroke="url(#path-gradient)"
-                strokeWidth="1"
+                strokeWidth="2"
                 initial={{
                   pathLength: 0,
                 }}
@@ -99,21 +99,21 @@ export default function WorldMap({
               <circle
                 cx={projectPoint(dot.start.lat, dot.start.lng).x}
                 cy={projectPoint(dot.start.lat, dot.start.lng).y}
-                r="2"
+                r="3"
                 fill={lineColor}
               />
               <circle
                 cx={projectPoint(dot.start.lat, dot.start.lng).x}
                 cy={projectPoint(dot.start.lat, dot.start.lng).y}
-                r="2"
+                r="3"
                 fill={lineColor}
                 opacity="0.5"
               >
                 <animate
                   attributeName="r"
-                  from="2"
-                  to="8"
-                  dur="1.5s"
+                  from="3"
+                  to="10"
+                  dur="2s"
                   begin="0s"
                   repeatCount="indefinite"
                 />
@@ -121,7 +121,7 @@ export default function WorldMap({
                   attributeName="opacity"
                   from="0.5"
                   to="0"
-                  dur="1.5s"
+                  dur="2s"
                   begin="0s"
                   repeatCount="indefinite"
                 />
@@ -131,21 +131,21 @@ export default function WorldMap({
               <circle
                 cx={projectPoint(dot.end.lat, dot.end.lng).x}
                 cy={projectPoint(dot.end.lat, dot.end.lng).y}
-                r="2"
+                r="3"
                 fill={lineColor}
               />
               <circle
                 cx={projectPoint(dot.end.lat, dot.end.lng).x}
                 cy={projectPoint(dot.end.lat, dot.end.lng).y}
-                r="2"
+                r="3"
                 fill={lineColor}
                 opacity="0.5"
               >
                 <animate
                   attributeName="r"
-                  from="2"
-                  to="8"
-                  dur="1.5s"
+                  from="3"
+                  to="10"
+                  dur="2s"
                   begin="0s"
                   repeatCount="indefinite"
                 />
@@ -153,7 +153,7 @@ export default function WorldMap({
                   attributeName="opacity"
                   from="0.5"
                   to="0"
-                  dur="1.5s"
+                  dur="2s"
                   begin="0s"
                   repeatCount="indefinite"
                 />

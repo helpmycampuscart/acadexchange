@@ -21,25 +21,6 @@ const HomePage = () => {
       {/* Hero Section with Sparkles */}
       <section className="relative">
         <SparklesPreview />
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
-          className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-center px-4"
-        >
-          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            The simplest way to buy and sell on campus
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg">
-              Start Shopping
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="lg">
-              Sell Your Items
-            </Button>
-          </div>
-        </motion.div>
       </section>
 
       {/* Stats Section */}
@@ -180,30 +161,6 @@ const HomePage = () => {
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto">
-          <motion.div 
-            className="text-center border border-border/50 bg-card/50 backdrop-blur p-8 max-w-2xl mx-auto rounded-lg"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <h2 className="text-3xl font-bold mb-4">Ready to Start?</h2>
-            <p className="text-muted-foreground mb-6">
-              Join thousands of students already using MyCampusCart
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg">
-                Browse Products
-              </Button>
-              <Button variant="outline" size="lg">
-                List Your Item
-              </Button>
-            </div>
-          </motion.div>
         </div>
       </section>
 
