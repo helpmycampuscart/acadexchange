@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
-import { Users, Package, Shield, MoreVertical, UserCheck, UserX, Ban, CheckCircle } from "lucide-react";
+import { Users, Package, Shield, MoreVertical, UserCheck, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -110,36 +110,6 @@ const AdminPanel = () => {
     }
   };
 
-  const handleToggleUserStatus = async (userId: string, currentStatus: string) => {
-    try {
-      const newStatus = currentStatus === 'blocked' ? 'active' : 'blocked';
-      
-      const { error } = await supabase
-        .from('users')
-        .update({ status: newStatus })
-        .eq('id', userId);
-
-      if (error) {
-        throw error;
-      }
-
-      setUsers(users.map(u => 
-        u.id === userId ? { ...u, status: newStatus as 'active' | 'blocked' } : u
-      ));
-
-      toast({
-        title: `User ${newStatus === 'blocked' ? 'blocked' : 'unblocked'} successfully`,
-        description: `User has been ${newStatus === 'blocked' ? 'blocked' : 'unblocked'}`
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update user status",
-        variant: "destructive"
-      });
-    }
-  };
-
   if (!isAdmin) {
     return null;
   }
@@ -148,8 +118,7 @@ const AdminPanel = () => {
     totalProducts: products.length,
     totalUsers: users.length,
     soldProducts: products.filter(p => p.isSold).length,
-    adminUsers: users.filter(u => u.role === 'admin').length,
-    blockedUsers: users.filter(u => u.status === 'blocked').length
+    adminUsers: users.filter(u => u.role === 'admin').length
   };
 
   return (
@@ -167,8 +136,8 @@ const AdminPanel = () => {
             </p>
           </div>
 
-          {/* Enhanced Admin Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+          {/* Admin Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Products</CardTitle>
@@ -206,16 +175,6 @@ const AdminPanel = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.adminUsers}</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Blocked Users</CardTitle>
-                <Ban className="h-4 w-4 text-destructive" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-destructive">{stats.blockedUsers}</div>
               </CardContent>
             </Card>
           </div>
@@ -277,14 +236,14 @@ const AdminPanel = () => {
                 </div>
               )}
 
-              {/* Enhanced Users Tab */}
+              {/* Users Tab */}
               {activeTab === 'users' && (
                 <div className="space-y-6">
                   <Card>
                     <CardHeader>
                       <CardTitle>All Users</CardTitle>
                       <CardDescription>
-                        Manage user accounts, permissions, and status
+                        Manage user accounts and permissions
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -299,7 +258,6 @@ const AdminPanel = () => {
                               <TableHead>Name</TableHead>
                               <TableHead>Email</TableHead>
                               <TableHead>Role</TableHead>
-                              <TableHead>Status</TableHead>
                               <TableHead>Joined</TableHead>
                               <TableHead>Actions</TableHead>
                             </TableRow>
@@ -312,11 +270,6 @@ const AdminPanel = () => {
                                 <TableCell>
                                   <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
                                     {user.role}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant={user.status === 'blocked' ? 'destructive' : 'default'}>
-                                    {user.status || 'active'}
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
@@ -342,21 +295,6 @@ const AdminPanel = () => {
                                           <>
                                             <UserCheck className="h-4 w-4 mr-2" />
                                             Make Admin
-                                          </>
-                                        )}
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={() => handleToggleUserStatus(user.id, user.status || 'active')}
-                                      >
-                                        {user.status === 'blocked' ? (
-                                          <>
-                                            <CheckCircle className="h-4 w-4 mr-2" />
-                                            Unblock User
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Ban className="h-4 w-4 mr-2" />
-                                            Block User
                                           </>
                                         )}
                                       </DropdownMenuItem>

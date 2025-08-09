@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types';
 
@@ -216,7 +217,6 @@ export const getUsersFromSupabase = async () => {
       email: user.email,
       name: user.name,
       role: user.role as 'user' | 'admin',
-      status: (user.status as 'active' | 'blocked') || 'active',
       createdAt: user.created_at,
     }));
   } catch (error) {
