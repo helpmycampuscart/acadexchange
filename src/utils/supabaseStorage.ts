@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types';
+import { sanitizeInput, validateProductInput, logSecurityEvent, checkRateLimit } from './securityUtils';
 
 // Generate unique product ID
 export const generateProductId = (): string => {
@@ -10,49 +11,25 @@ export const generateProductId = (): string => {
   return `${prefix}${timestamp}${random}`.toUpperCase();
 };
 
-// Input validation functions
-const validateProduct = (product: Product): { valid: boolean; error?: string } => {
-  if (!product.name || product.name.trim().length < 2) {
-    return { valid: false, error: 'Product name must be at least 2 characters long' };
-  }
-  
-  if (product.price <= 0 || product.price > 1000000) {
-    return { valid: false, error: 'Price must be between ₹1 and ₹10,00,000' };
-  }
-  
-  if (!product.category || product.category.trim().length === 0) {
-    return { valid: false, error: 'Category is required' };
-  }
-  
-  if (!product.location || product.location.trim().length === 0) {
-    return { valid: false, error: 'Location is required' };
-  }
-  
-  // Validate WhatsApp number format (basic validation)
-  const whatsappRegex = /^[+]?[1-9]\d{1,14}$/;
-  if (!product.whatsappNumber || !whatsappRegex.test(product.whatsappNumber.replace(/\s/g, ''))) {
-    return { valid: false, error: 'Please enter a valid WhatsApp number' };
-  }
-  
-  return { valid: true };
-};
-
-const sanitizeInput = (input: string): string => {
-  return input.trim().replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-};
-
-// Product operations with Supabase
+// Enhanced product operations with security
 export const saveProductToSupabase = async (product: Product): Promise<{ success: boolean; error?: string }> => {
   try {
+    // Rate limiting check
+    if (!checkRateLimit(`product-create-${product.userId}`, 5, 300000)) { // 5 products per 5 minutes
+      await logSecurityEvent('rate_limit_exceeded', { userId: product.userId, action: 'create_product' });
+      return { success: false, error: 'Too many products created recently. Please wait before creating another.' };
+    }
+
     console.log('Validating product data...');
-    // Validate product data
-    const validation = validateProduct(product);
+    // Enhanced validation
+    const validation = validateProductInput(product);
     if (!validation.valid) {
       console.error('Validation failed:', validation.error);
+      await logSecurityEvent('validation_failed', { userId: product.userId, error: validation.error });
       return { success: false, error: validation.error };
     }
 
-    // Sanitize string inputs
+    // Enhanced sanitization
     const sanitizedProduct = {
       ...product,
       name: sanitizeInput(product.name),
@@ -84,13 +61,16 @@ export const saveProductToSupabase = async (product: Product): Promise<{ success
 
     if (error) {
       console.error('Database error saving product:', error);
+      await logSecurityEvent('database_error', { userId: product.userId, error: error.message });
       return { success: false, error: `Database error: ${error.message}` };
     }
 
     console.log('Product saved successfully');
+    await logSecurityEvent('product_created', { userId: product.userId, productId: product.id });
     return { success: true };
   } catch (error) {
     console.error('Unexpected error saving product:', error);
+    await logSecurityEvent('unexpected_error', { userId: product.userId, error: String(error) });
     return { success: false, error: 'Unexpected error occurred' };
   }
 };
@@ -104,6 +84,7 @@ export const getProductsFromSupabase = async (): Promise<Product[]> => {
 
     if (error) {
       console.error('Error fetching products:', error);
+      await logSecurityEvent('fetch_error', { error: error.message });
       return [];
     }
 
@@ -125,42 +106,60 @@ export const getProductsFromSupabase = async (): Promise<Product[]> => {
     }));
   } catch (error) {
     console.error('Error fetching products:', error);
+    await logSecurityEvent('fetch_error', { error: String(error) });
     return [];
   }
 };
 
 export const updateProductInSupabase = async (productId: string, updates: Partial<Product>): Promise<{ success: boolean; error?: string }> => {
   try {
+    // Rate limiting check
+    if (!checkRateLimit(`product-update-${productId}`, 10, 60000)) { // 10 updates per minute
+      await logSecurityEvent('rate_limit_exceeded', { productId, action: 'update_product' });
+      return { success: false, error: 'Too many update requests. Please wait before trying again.' };
+    }
+
     const updateData: any = {};
     
     if (updates.name) {
-      updateData.name = sanitizeInput(updates.name);
-      if (updateData.name.length < 2) {
-        return { success: false, error: 'Product name must be at least 2 characters long' };
+      const sanitized = sanitizeInput(updates.name);
+      if (sanitized.length < 2 || sanitized.length > 100) {
+        return { success: false, error: 'Product name must be between 2 and 100 characters long' };
       }
+      updateData.name = sanitized;
     }
+    
     if (updates.description !== undefined) {
-      updateData.description = updates.description ? sanitizeInput(updates.description) : '';
+      const sanitized = updates.description ? sanitizeInput(updates.description) : '';
+      if (sanitized.length > 1000) {
+        return { success: false, error: 'Description must be less than 1000 characters' };
+      }
+      updateData.description = sanitized;
     }
+    
     if (updates.price) {
-      if (updates.price <= 0 || updates.price > 1000000) {
-        return { success: false, error: 'Price must be between ₹1 and ₹10,00,000' };
+      if (updates.price <= 0 || updates.price > 10000000) {
+        return { success: false, error: 'Price must be between ₹1 and ₹1,00,00,000' };
       }
       updateData.price = updates.price;
     }
+    
     if (updates.category) {
       updateData.category = sanitizeInput(updates.category);
     }
+    
     if (updates.location) {
       updateData.location = sanitizeInput(updates.location);
     }
+    
     if (updates.whatsappNumber) {
-      const whatsappRegex = /^[+]?[1-9]\d{1,14}$/;
-      if (!whatsappRegex.test(updates.whatsappNumber.replace(/\s/g, ''))) {
+      const whatsappRegex = /^[+]?[1-9]\d{7,14}$/;
+      if (!whatsappRegex.test(updates.whatsappNumber.replace(/[\s-]/g, ''))) {
         return { success: false, error: 'Please enter a valid WhatsApp number' };
       }
       updateData.whatsapp_number = updates.whatsappNumber;
     }
+    
     if (updates.imageUrl !== undefined) updateData.image_url = updates.imageUrl;
     if (updates.isSold !== undefined) updateData.is_sold = updates.isSold;
 
@@ -171,18 +170,27 @@ export const updateProductInSupabase = async (productId: string, updates: Partia
 
     if (error) {
       console.error('Error updating product:', error);
+      await logSecurityEvent('update_error', { productId, error: error.message });
       return { success: false, error: error.message };
     }
 
+    await logSecurityEvent('product_updated', { productId, updates: Object.keys(updateData) });
     return { success: true };
   } catch (error) {
     console.error('Unexpected error updating product:', error);
+    await logSecurityEvent('unexpected_error', { productId, error: String(error) });
     return { success: false, error: 'Unexpected error occurred' };
   }
 };
 
 export const deleteProductFromSupabase = async (productId: string): Promise<{ success: boolean; error?: string }> => {
   try {
+    // Rate limiting check
+    if (!checkRateLimit(`product-delete-${productId}`, 3, 60000)) { // 3 deletions per minute
+      await logSecurityEvent('rate_limit_exceeded', { productId, action: 'delete_product' });
+      return { success: false, error: 'Too many delete requests. Please wait before trying again.' };
+    }
+
     const { error } = await supabase
       .from('products')
       .delete()
@@ -190,12 +198,15 @@ export const deleteProductFromSupabase = async (productId: string): Promise<{ su
 
     if (error) {
       console.error('Error deleting product:', error);
+      await logSecurityEvent('delete_error', { productId, error: error.message });
       return { success: false, error: error.message };
     }
 
+    await logSecurityEvent('product_deleted', { productId });
     return { success: true };
   } catch (error) {
     console.error('Unexpected error deleting product:', error);
+    await logSecurityEvent('unexpected_error', { productId, error: String(error) });
     return { success: false, error: 'Unexpected error occurred' };
   }
 };
@@ -209,6 +220,7 @@ export const getUsersFromSupabase = async () => {
 
     if (error) {
       console.error('Error fetching users:', error);
+      await logSecurityEvent('users_fetch_error', { error: error.message });
       return [];
     }
 
@@ -221,6 +233,7 @@ export const getUsersFromSupabase = async () => {
     }));
   } catch (error) {
     console.error('Error fetching users:', error);
+    await logSecurityEvent('users_fetch_error', { error: String(error) });
     return [];
   }
 };

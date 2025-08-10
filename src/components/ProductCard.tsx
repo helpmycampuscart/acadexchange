@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MessageCircle, MapPin, Calendar, CheckCircle, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { useUser } from "@clerk/clerk-react";
 import { updateProductInSupabase } from "@/utils/supabaseStorage";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 interface ProductCardProps {
   product: Product;
@@ -21,21 +23,31 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh }: ProductCardProps) => {
   const { user } = useUser();
+  const { isAdmin } = useAdminCheck();
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const isOwner = user?.emailAddresses[0]?.emailAddress === product.userEmail;
-  const isAdmin = user?.emailAddresses[0]?.emailAddress === 'abhinavpadige06@gmail.com' ||
-                   user?.emailAddresses[0]?.emailAddress === 'admin@mycampuscart.com';
+  const isOwner = user?.id === product.userId;
+  const canModify = isOwner || isAdmin;
 
   const handleWhatsAppClick = () => {
+    // Only show WhatsApp if user is authenticated and contact info is available
+    if (!user || !product.whatsappNumber) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to view contact information",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const message = `Hi! I'm interested in your product:\n\n📦 ${product.name}\n🆔 Product ID: ${product.uniqueId}\n💰 Price: ₹${product.price.toLocaleString()}\n\nIs it still available?`;
     const whatsappUrl = `https://wa.me/${product.whatsappNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
   const handleMarkAsSold = async () => {
-    if (!isOwner && !isAdmin) return;
+    if (!canModify) return;
     
     setIsUpdating(true);
     try {
@@ -96,7 +108,7 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
                 )}
               </div>
               
-              {showActions && (isOwner || isAdmin) && (
+              {showActions && canModify && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -117,7 +129,7 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
                         </DropdownMenuItem>
                       </>
                     )}
-                    {(isOwner || isAdmin) && (
+                    {canModify && (
                       <DropdownMenuItem 
                         onClick={() => onDelete?.(product.id)}
                         className="text-red-600"
@@ -162,7 +174,7 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
               >
                 ₹{product.price.toLocaleString()}
               </motion.div>
-              {!product.isSold && (
+              {!product.isSold && user && product.whatsappNumber && (
                 <Button 
                   size="sm" 
                   onClick={handleWhatsAppClick}
