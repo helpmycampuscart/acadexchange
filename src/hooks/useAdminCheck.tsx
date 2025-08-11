@@ -1,7 +1,11 @@
 
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/clerk-react';
-import { supabase } from '@/integrations/supabase/client';
+
+const ADMIN_EMAILS = [
+  'abhinavpadige06@gmail.com',
+  'help.mycampuscart@gmail.com'
+];
 
 export const useAdminCheck = () => {
   const { user, isLoaded } = useUser();
@@ -9,7 +13,7 @@ export const useAdminCheck = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
+    const checkAdminStatus = () => {
       if (!isLoaded || !user) {
         setIsAdmin(false);
         setIsLoading(false);
@@ -17,19 +21,9 @@ export const useAdminCheck = () => {
       }
 
       try {
-        // Query the user's role from the database
-        const { data, error } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          console.error('Error checking admin status:', error);
-          setIsAdmin(false);
-        } else {
-          setIsAdmin(data?.role === 'admin');
-        }
+        const userEmail = user.emailAddresses[0]?.emailAddress;
+        const adminStatus = ADMIN_EMAILS.includes(userEmail || '');
+        setIsAdmin(adminStatus);
       } catch (error) {
         console.error('Error checking admin status:', error);
         setIsAdmin(false);

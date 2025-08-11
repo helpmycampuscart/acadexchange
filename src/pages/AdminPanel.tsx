@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
@@ -15,28 +14,29 @@ import { getProductsFromSupabase, deleteProductFromSupabase, getUsersFromSupabas
 import { Product, User } from "@/types";
 import ProductCard from "@/components/ProductCard";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 const AdminPanel = () => {
   const navigate = useNavigate();
   const { user } = useUser();
   const { toast } = useToast();
+  const { isAdmin, isLoading: adminLoading } = useAdminCheck();
   
   const [products, setProducts] = useState<Product[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'products' | 'users'>('products');
 
-  const isAdmin = user?.emailAddresses[0]?.emailAddress === 'abhinavpadige06@gmail.com' ||
-                   user?.emailAddresses[0]?.emailAddress === 'admin@mycampuscart.com';
-
   useEffect(() => {
-    if (!isAdmin) {
+    if (!adminLoading && !isAdmin) {
       navigate('/dashboard');
       return;
     }
     
-    fetchData();
-  }, [isAdmin, navigate]);
+    if (!adminLoading && isAdmin) {
+      fetchData();
+    }
+  }, [isAdmin, adminLoading, navigate]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -109,6 +109,14 @@ const AdminPanel = () => {
       });
     }
   };
+
+  if (adminLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     return null;
