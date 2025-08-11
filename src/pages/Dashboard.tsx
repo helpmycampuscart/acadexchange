@@ -60,7 +60,7 @@ const Dashboard = () => {
         </motion.div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -85,26 +85,6 @@ const Dashboard = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-          >
-            <Card className="glass-card simple-hover">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Students
-                </CardTitle>
-                <div className="text-2xl font-bold text-primary">
-                  {loading ? "..." : stats.activeUsers}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
           >
             <Card className="glass-card simple-hover">
               <CardHeader className="pb-3">
