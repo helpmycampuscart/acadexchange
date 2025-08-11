@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useClerkSync } from "@/hooks/useClerkSync";
 import { useStats } from "@/hooks/useStats";
+import { DebugInfo } from "@/components/DebugInfo";
 import { motion } from "framer-motion";
 
 const Dashboard = () => {
@@ -88,7 +89,7 @@ const Dashboard = () => {
             <Card className="glass-card simple-hover">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Active Users
+                  Total Students
                 </CardTitle>
                 <div className="text-2xl font-bold text-primary">
                   {loading ? "..." : stats.activeUsers}
@@ -178,6 +179,7 @@ const Dashboard = () => {
       </div>
 
       <Footer />
+      <DebugInfo />
     </div>
   );
 };

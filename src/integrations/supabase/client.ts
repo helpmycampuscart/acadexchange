@@ -18,17 +18,22 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// Simple function to sync user data without JWT tokens
+// Enhanced function to sync user data with better error handling
 export const syncUserWithSupabase = async (userId: string, email: string, name: string) => {
   try {
-    console.log('Syncing user with Supabase:', userId);
+    console.log('Syncing user with Supabase:', { userId, email, name });
     
     // Check if user exists first
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: checkError } = await supabase
       .from('users')
-      .select('id')
+      .select('id, email, name, role')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Error checking existing user:', checkError);
+      return { success: false, error: checkError.message };
+    }
 
     if (!existingUser) {
       console.log('Creating new user record');
@@ -43,13 +48,38 @@ export const syncUserWithSupabase = async (userId: string, email: string, name: 
 
       if (error) {
         console.error('Error creating user:', error);
+        // Don't fail if it's a duplicate key error (user already exists)
+        if (error.code === '23505') {
+          console.log('User already exists (duplicate key), continuing...');
+          return { success: true };
+        }
         return { success: false, error: error.message };
       } else {
         console.log('User created successfully');
         return { success: true };
       }
     } else {
-      console.log('User already exists');
+      console.log('User already exists:', existingUser);
+      
+      // Update user info if it has changed
+      const needsUpdate = existingUser.email !== email || existingUser.name !== name;
+      
+      if (needsUpdate) {
+        console.log('Updating user info');
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({
+            email: email,
+            name: name
+          })
+          .eq('id', userId);
+
+        if (updateError) {
+          console.error('Error updating user:', updateError);
+          return { success: false, error: updateError.message };
+        }
+      }
+      
       return { success: true };
     }
   } catch (error) {

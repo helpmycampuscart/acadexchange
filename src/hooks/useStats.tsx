@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getProducts } from '@/utils/storage';
@@ -22,38 +23,54 @@ export const useStats = () => {
       try {
         console.log('Fetching stats from Supabase...');
         
-        // Get total products
+        // Get total products count
         const { count: totalProducts, error: productsError } = await supabase
           .from('products')
           .select('*', { count: 'exact', head: true });
 
-        // Get active users  
+        if (productsError) {
+          console.error('Error fetching products count:', productsError);
+        }
+
+        // Get active users count
         const { count: activeUsers, error: usersError } = await supabase
           .from('users')
           .select('*', { count: 'exact', head: true });
 
-        // Get sold products
+        if (usersError) {
+          console.error('Error fetching users count:', usersError);
+        }
+
+        // Get sold products count
         const { count: productsSold, error: soldError } = await supabase
           .from('products')
           .select('*', { count: 'exact', head: true })
           .eq('is_sold', true);
 
-        if (productsError || usersError || soldError) {
-          throw new Error('Failed to fetch some stats from database');
+        if (soldError) {
+          console.error('Error fetching sold products count:', soldError);
         }
 
-        setStats({
+        // Set stats with fallback to 0 if any query failed
+        const finalStats = {
           totalProducts: totalProducts || 0,
           activeUsers: activeUsers || 0,
           productsSold: productsSold || 0
-        });
+        };
 
-        console.log('Successfully fetched stats:', { totalProducts, activeUsers, productsSold });
+        setStats(finalStats);
+        console.log('Successfully fetched stats:', finalStats);
+
+        // Clear any previous errors if we got data
+        if (!productsError && !usersError && !soldError) {
+          setError(null);
+        }
+
       } catch (error) {
         console.error('Error fetching stats from Supabase:', error);
         setError('Unable to fetch latest stats');
         
-        // Fallback to localStorage for product count
+        // Fallback to localStorage for product count only
         try {
           const localProducts = getProducts();
           const soldProducts = localProducts.filter(p => p.isSold);
@@ -75,6 +92,29 @@ export const useStats = () => {
     };
 
     fetchStats();
+
+    // Set up real-time subscription for stats updates
+    const channel = supabase
+      .channel('stats-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'products' }, 
+        () => {
+          console.log('Products table changed, refetching stats...');
+          fetchStats();
+        }
+      )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'users' }, 
+        () => {
+          console.log('Users table changed, refetching stats...');
+          fetchStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return { stats, loading, error };
