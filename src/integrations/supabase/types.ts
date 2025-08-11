@@ -118,57 +118,7 @@ export type Database = {
       }
     }
     Views: {
-      products_public: {
-        Row: {
-          category: string | null
-          created_at: string | null
-          description: string | null
-          id: string | null
-          image_url: string | null
-          is_sold: boolean | null
-          location: string | null
-          name: string | null
-          price: number | null
-          unique_id: string | null
-          user_email: string | null
-          user_id: string | null
-          user_name: string | null
-          whatsapp_number: string | null
-        }
-        Insert: {
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          image_url?: string | null
-          is_sold?: boolean | null
-          location?: string | null
-          name?: string | null
-          price?: number | null
-          unique_id?: string | null
-          user_email?: never
-          user_id?: string | null
-          user_name?: string | null
-          whatsapp_number?: never
-        }
-        Update: {
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          image_url?: string | null
-          is_sold?: boolean | null
-          location?: string | null
-          name?: string | null
-          price?: number | null
-          unique_id?: string | null
-          user_email?: never
-          user_id?: string | null
-          user_name?: string | null
-          whatsapp_number?: never
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       can_access_product_details: {

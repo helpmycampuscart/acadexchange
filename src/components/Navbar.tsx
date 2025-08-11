@@ -4,12 +4,12 @@ import { useUser, UserButton, SignedIn, SignedOut, SignInButton } from "@clerk/c
 import { Home, ShoppingBag, PlusCircle, List, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { user } = useUser();
-  const isAdmin = user?.emailAddresses[0]?.emailAddress === 'abhinavpadige06@gmail.com' || 
-                   user?.emailAddresses[0]?.emailAddress === 'admin@mycampuscart.com';
+  const { isAdmin } = useAdminCheck();
 
   return (
     <motion.nav 

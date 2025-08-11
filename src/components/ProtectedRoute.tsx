@@ -1,6 +1,8 @@
+
 import { useUser } from '@clerk/clerk-react';
 import { Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,8 +11,9 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) => {
   const { user, isLoaded } = useUser();
+  const { isAdmin, isLoading: adminLoading } = useAdminCheck();
 
-  if (!isLoaded) {
+  if (!isLoaded || (adminOnly && adminLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -22,13 +25,8 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
     return <Navigate to="/" replace />;
   }
 
-  if (adminOnly) {
-    const isAdmin = user.emailAddresses[0]?.emailAddress === 'abhinavpadige06@gmail.com' ||
-                   user.emailAddresses[0]?.emailAddress === 'admin@mycampuscart.com';
-    
-    if (!isAdmin) {
-      return <Navigate to="/dashboard" replace />;
-    }
+  if (adminOnly && !isAdmin) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

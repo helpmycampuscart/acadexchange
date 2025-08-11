@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { MessageCircle, MapPin, Calendar, CheckCircle, MoreVertical } from "lucide-react";
+import { MapPin, Calendar, CheckCircle, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { updateProductInSupabase } from "@/utils/supabaseStorage";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
+import SecureContactButton from "./SecureContactButton";
 
 interface ProductCardProps {
   product: Product;
@@ -29,22 +30,6 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
 
   const isOwner = user?.id === product.userId;
   const canModify = isOwner || isAdmin;
-
-  const handleWhatsAppClick = () => {
-    // Only show WhatsApp if user is authenticated and contact info is available
-    if (!user || !product.whatsappNumber) {
-      toast({
-        title: "Sign in required",
-        description: "Please sign in to view contact information",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const message = `Hi! I'm interested in your product:\n\n📦 ${product.name}\n🆔 Product ID: ${product.uniqueId}\n💰 Price: ₹${product.price.toLocaleString()}\n\nIs it still available?`;
-    const whatsappUrl = `https://wa.me/${product.whatsappNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-  };
 
   const handleMarkAsSold = async () => {
     if (!canModify) return;
@@ -174,16 +159,15 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
               >
                 ₹{product.price.toLocaleString()}
               </motion.div>
-              {!product.isSold && user && product.whatsappNumber && (
-                <Button 
-                  size="sm" 
-                  onClick={handleWhatsAppClick}
-                  className="flex items-center space-x-2 hover:scale-105 transition-transform premium-button"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  <span>Contact</span>
-                </Button>
-              )}
+              
+              <SecureContactButton
+                productId={product.id}
+                productName={product.name}
+                productUniqueId={product.uniqueId}
+                productPrice={product.price}
+                whatsappNumber={product.whatsappNumber}
+                isSold={product.isSold}
+              />
             </div>
 
             <div className="space-y-2 text-sm text-muted-foreground">
