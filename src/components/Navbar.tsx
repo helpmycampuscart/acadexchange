@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useUser, UserButton, SignedIn, SignedOut, SignInButton } from "@clerk/clerk-react";
 import { Home, ShoppingBag, PlusCircle, List, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { HoverBorderGradient } from "@/components/ui/hover-border-gradient";
 import { motion } from "framer-motion";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 
@@ -80,9 +81,13 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             <SignedOut>
               <SignInButton mode="modal">
-                <Button className="premium-button font-semibold">
+                <HoverBorderGradient
+                  as="button"
+                  containerClassName="rounded-full"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-6 py-2"
+                >
                   Sign In
-                </Button>
+                </HoverBorderGradient>
               </SignInButton>
             </SignedOut>
 

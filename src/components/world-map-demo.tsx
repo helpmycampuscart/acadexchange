@@ -1,4 +1,3 @@
-
 "use client";
 import WorldMap from "@/components/ui/world-map";
 import { motion } from "framer-motion";
@@ -29,7 +28,7 @@ export default function WorldMapDemo() {
         </p>
       </div>
       <WorldMap
-        zoomLevel={3.5}
+        zoomLevel={1.5}
         centerLat={20.5937}
         centerLng={78.9629}
         dots={[
