@@ -182,10 +182,21 @@ export const updateProductInSupabase = async (productId: string, updates: Partia
   }
 };
 
-// Fixed deletion function - bypassing RLS by using service role approach
+// Enhanced deletion function with better debugging
 export const deleteProductFromSupabase = async (productId: string, userId?: string): Promise<{ success: boolean; error?: string }> => {
   try {
-    console.log('Starting product deletion:', { productId, userId });
+    console.log('=== DELETION DEBUG START ===');
+    console.log('Attempting to delete product:', { productId, userId });
+    
+    if (!productId) {
+      console.log('ERROR: No product ID provided');
+      return { success: false, error: 'Product ID is required' };
+    }
+
+    if (!userId) {
+      console.log('ERROR: No user ID provided');
+      return { success: false, error: 'User ID is required for deletion' };
+    }
     
     // Rate limiting check
     if (!checkRateLimit(`product-delete-${productId}`, 3, 60000)) {
@@ -193,33 +204,74 @@ export const deleteProductFromSupabase = async (productId: string, userId?: stri
       return { success: false, error: 'Too many delete requests. Please wait before trying again.' };
     }
 
-    // Direct deletion with explicit user verification
+    // First, let's check if the product exists and get its details
+    console.log('Checking if product exists...');
+    const { data: existingProduct, error: fetchError } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', productId)
+      .single();
+
+    if (fetchError) {
+      console.log('ERROR: Failed to fetch product for verification:', fetchError);
+      return { success: false, error: `Product not found: ${fetchError.message}` };
+    }
+
+    if (!existingProduct) {
+      console.log('ERROR: Product not found in database');
+      return { success: false, error: 'Product not found' };
+    }
+
+    console.log('Product found:', {
+      id: existingProduct.id,
+      name: existingProduct.name,
+      owner: existingProduct.user_id,
+      requestingUser: userId
+    });
+
+    // Verify ownership
+    if (existingProduct.user_id !== userId) {
+      console.log('ERROR: User does not own this product');
+      await logSecurityEvent('unauthorized_delete_attempt', { productId, userId, actualOwner: existingProduct.user_id });
+      return { success: false, error: 'You can only delete your own products' };
+    }
+
+    console.log('Ownership verified. Proceeding with deletion...');
+
+    // Attempt deletion with detailed logging
     const { data: deletedRows, error: deleteError } = await supabase
       .from('products')
       .delete()
       .eq('id', productId)
-      .eq('user_id', userId || '') // Ensure only owner can delete
-      .select(); // Return deleted rows to verify deletion
+      .eq('user_id', userId)
+      .select();
+
+    console.log('Deletion attempt result:', {
+      deletedRows,
+      deleteError,
+      deletedCount: deletedRows?.length || 0
+    });
 
     if (deleteError) {
-      console.error('Error deleting product:', deleteError);
+      console.log('ERROR: Database deletion failed:', deleteError);
       await logSecurityEvent('delete_error', { productId, error: deleteError.message });
       return { success: false, error: `Failed to delete product: ${deleteError.message}` };
     }
 
-    console.log('Product deletion result:', { deletedRows });
-
     if (!deletedRows || deletedRows.length === 0) {
-      return { success: false, error: 'Product not found or you do not have permission to delete it' };
+      console.log('ERROR: No rows were deleted');
+      return { success: false, error: 'Product could not be deleted. It may have already been removed.' };
     }
 
+    console.log('✅ Product deleted successfully');
     await logSecurityEvent('product_deleted', { productId, userId });
-    console.log('Product deleted successfully');
+    console.log('=== DELETION DEBUG END ===');
     return { success: true };
+    
   } catch (error) {
-    console.error('Unexpected error deleting product:', error);
+    console.log('ERROR: Unexpected error during deletion:', error);
     await logSecurityEvent('unexpected_error', { productId, error: String(error) });
-    return { success: false, error: 'Unexpected error occurred while deleting product' };
+    return { success: false, error: 'An unexpected error occurred while deleting the product' };
   }
 };
 

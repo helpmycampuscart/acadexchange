@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PlusCircle, Package } from "lucide-react";
@@ -62,25 +61,41 @@ const MyListings = () => {
       return;
     }
 
+    console.log('=== DELETION INITIATED ===');
+    console.log('User attempting deletion:', { userId: user.id, productId });
+
     setDeletingProduct(productId);
     
     try {
-      console.log('Attempting to delete product:', { productId, userId: user.id });
-      
       const result = await deleteProductFromSupabase(productId, user.id);
+      
+      console.log('Deletion result:', result);
       
       if (result.success) {
         // Remove the product from local state immediately
-        setProducts(prevProducts => prevProducts.filter(p => p.id !== productId));
+        setProducts(prevProducts => {
+          const updatedProducts = prevProducts.filter(p => p.id !== productId);
+          console.log('Updated local state:', { 
+            before: prevProducts.length, 
+            after: updatedProducts.length 
+          });
+          return updatedProducts;
+        });
         
         toast({
           title: "Product deleted successfully",
           description: "Your item has been removed from the marketplace"
         });
         
-        console.log('Product deleted successfully');
+        console.log('✅ Product deletion completed successfully');
+        
+        // Refresh the list to ensure sync
+        setTimeout(() => {
+          fetchMyProducts();
+        }, 1000);
+        
       } else {
-        console.error('Deletion failed:', result.error);
+        console.error('❌ Deletion failed:', result.error);
         toast({
           title: "Deletion Failed",
           description: result.error || "Failed to delete product. Please try again.",
@@ -88,7 +103,7 @@ const MyListings = () => {
         });
       }
     } catch (error) {
-      console.error('Unexpected error during deletion:', error);
+      console.error('❌ Unexpected error during deletion:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred while deleting the product",
@@ -207,16 +222,55 @@ const MyListings = () => {
                   <h2 className="text-2xl font-bold mb-4">Active Listings ({activeProducts.length})</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {activeProducts.map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        product={product}
-                        showActions={true}
-                        onEdit={handleEditProduct}
-                        onDelete={(productId) => {
-                          // Use AlertDialog for confirmation
-                        }}
-                        onRefresh={fetchMyProducts}
-                      />
+                      <div key={product.id} className="relative">
+                        <ProductCard
+                          product={product}
+                          showActions={true}
+                          onEdit={handleEditProduct}
+                          onDelete={(productId) => {
+                            // This will be handled by the AlertDialog in ProductCard
+                          }}
+                          onRefresh={fetchMyProducts}
+                        />
+                        
+                        {/* Enhanced Delete Confirmation */}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              disabled={deletingProduct === product.id}
+                            >
+                              {deletingProduct === product.id ? 'Deleting...' : 'Delete'}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{product.name}"? 
+                                <br />
+                                <strong>This action cannot be undone.</strong>
+                                <br />
+                                <small className="text-muted-foreground">
+                                  Product ID: {product.uniqueId}
+                                </small>
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteProduct(product.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                                disabled={deletingProduct === product.id}
+                              >
+                                {deletingProduct === product.id ? 'Deleting...' : 'Delete Product'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -228,16 +282,55 @@ const MyListings = () => {
                   <h2 className="text-2xl font-bold mb-4">Sold Items ({soldProducts.length})</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {soldProducts.map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        product={product}
-                        showActions={true}
-                        onEdit={handleEditProduct}
-                        onDelete={(productId) => {
-                          // Use AlertDialog for confirmation
-                        }}
-                        onRefresh={fetchMyProducts}
-                      />
+                      <div key={product.id} className="relative">
+                        <ProductCard
+                          product={product}
+                          showActions={true}
+                          onEdit={handleEditProduct}
+                          onDelete={(productId) => {
+                            // This will be handled by the AlertDialog
+                          }}
+                          onRefresh={fetchMyProducts}
+                        />
+                        
+                        {/* Enhanced Delete Confirmation for Sold Items */}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              disabled={deletingProduct === product.id}
+                            >
+                              {deletingProduct === product.id ? 'Deleting...' : 'Delete'}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Sold Product</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete the sold item "{product.name}"? 
+                                <br />
+                                <strong>This will permanently remove it from your sales history.</strong>
+                                <br />
+                                <small className="text-muted-foreground">
+                                  Product ID: {product.uniqueId}
+                                </small>
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteProduct(product.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                                disabled={deletingProduct === product.id}
+                              >
+                                {deletingProduct === product.id ? 'Deleting...' : 'Delete Product'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     ))}
                   </div>
                 </div>
