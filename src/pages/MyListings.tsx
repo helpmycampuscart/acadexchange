@@ -1,10 +1,11 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { PlusCircle, Edit, Package } from "lucide-react";
+import { PlusCircle, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -19,6 +20,7 @@ const MyListings = () => {
   
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingProduct, setDeletingProduct] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -37,7 +39,9 @@ const MyListings = () => {
       const allProducts = await getProductsFromSupabase();
       const myProducts = allProducts.filter(product => product.userId === user.id);
       setProducts(myProducts);
+      console.log('Fetched products for user:', { userId: user.id, count: myProducts.length });
     } catch (error) {
+      console.error('Error fetching products:', error);
       toast({
         title: "Error",
         description: "Failed to fetch your products",
@@ -49,23 +53,49 @@ const MyListings = () => {
   };
 
   const handleDeleteProduct = async (productId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to delete products",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setDeletingProduct(productId);
+    
     try {
-      const result = await deleteProductFromSupabase(productId);
+      console.log('Attempting to delete product:', { productId, userId: user.id });
+      
+      const result = await deleteProductFromSupabase(productId, user.id);
+      
       if (result.success) {
-        setProducts(products.filter(p => p.id !== productId));
+        // Remove the product from local state immediately
+        setProducts(prevProducts => prevProducts.filter(p => p.id !== productId));
+        
         toast({
           title: "Product deleted successfully",
           description: "Your item has been removed from the marketplace"
         });
+        
+        console.log('Product deleted successfully');
       } else {
-        throw new Error(result.error);
+        console.error('Deletion failed:', result.error);
+        toast({
+          title: "Deletion Failed",
+          description: result.error || "Failed to delete product. Please try again.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
+      console.error('Unexpected error during deletion:', error);
       toast({
         title: "Error",
-        description: "Failed to delete product",
+        description: "An unexpected error occurred while deleting the product",
         variant: "destructive"
       });
+    } finally {
+      setDeletingProduct(null);
     }
   };
 
@@ -182,7 +212,9 @@ const MyListings = () => {
                         product={product}
                         showActions={true}
                         onEdit={handleEditProduct}
-                        onDelete={handleDeleteProduct}
+                        onDelete={(productId) => {
+                          // Use AlertDialog for confirmation
+                        }}
                         onRefresh={fetchMyProducts}
                       />
                     ))}
@@ -201,7 +233,9 @@ const MyListings = () => {
                         product={product}
                         showActions={true}
                         onEdit={handleEditProduct}
-                        onDelete={handleDeleteProduct}
+                        onDelete={(productId) => {
+                          // Use AlertDialog for confirmation
+                        }}
                         onRefresh={fetchMyProducts}
                       />
                     ))}

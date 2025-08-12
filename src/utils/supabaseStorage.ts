@@ -183,31 +183,66 @@ export const updateProductInSupabase = async (productId: string, updates: Partia
   }
 };
 
-export const deleteProductFromSupabase = async (productId: string): Promise<{ success: boolean; error?: string }> => {
+export const deleteProductFromSupabase = async (productId: string, userId?: string): Promise<{ success: boolean; error?: string }> => {
   try {
+    console.log('Starting product deletion:', { productId, userId });
+    
     // Rate limiting check
     if (!checkRateLimit(`product-delete-${productId}`, 3, 60000)) { // 3 deletions per minute
       await logSecurityEvent('rate_limit_exceeded', { productId, action: 'delete_product' });
       return { success: false, error: 'Too many delete requests. Please wait before trying again.' };
     }
 
-    const { error } = await supabase
+    // First, verify the product exists and get its details
+    const { data: existingProduct, error: fetchError } = await supabase
       .from('products')
-      .delete()
-      .eq('id', productId);
+      .select('*')
+      .eq('id', productId)
+      .single();
 
-    if (error) {
-      console.error('Error deleting product:', error);
-      await logSecurityEvent('delete_error', { productId, error: error.message });
-      return { success: false, error: error.message };
+    if (fetchError) {
+      console.error('Error fetching product for deletion:', fetchError);
+      return { success: false, error: 'Product not found or access denied' };
     }
 
-    await logSecurityEvent('product_deleted', { productId });
+    if (!existingProduct) {
+      return { success: false, error: 'Product not found' };
+    }
+
+    console.log('Product found for deletion:', existingProduct);
+
+    // Check ownership if userId is provided
+    if (userId && existingProduct.user_id !== userId) {
+      await logSecurityEvent('unauthorized_delete_attempt', { productId, userId, actualOwner: existingProduct.user_id });
+      return { success: false, error: 'You can only delete your own products' };
+    }
+
+    // Perform the deletion
+    const { error: deleteError, count } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', productId)
+      .eq('user_id', existingProduct.user_id); // Extra security check
+
+    if (deleteError) {
+      console.error('Error deleting product:', deleteError);
+      await logSecurityEvent('delete_error', { productId, error: deleteError.message });
+      return { success: false, error: `Failed to delete product: ${deleteError.message}` };
+    }
+
+    console.log('Product deletion result:', { count });
+
+    if (count === 0) {
+      return { success: false, error: 'Product not found or already deleted' };
+    }
+
+    await logSecurityEvent('product_deleted', { productId, userId: existingProduct.user_id });
+    console.log('Product deleted successfully');
     return { success: true };
   } catch (error) {
     console.error('Unexpected error deleting product:', error);
     await logSecurityEvent('unexpected_error', { productId, error: String(error) });
-    return { success: false, error: 'Unexpected error occurred' };
+    return { success: false, error: 'Unexpected error occurred while deleting product' };
   }
 };
 
