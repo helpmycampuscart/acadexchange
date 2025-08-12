@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
-import { Users, Package, Shield, MoreVertical, UserCheck, UserX } from "lucide-react";
+import { Users, Package, Shield, MoreVertical, UserCheck, UserX, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { getProductsFromSupabase, deleteProductFromSupabase, getUsersFromSupabase } from "@/utils/supabaseStorage";
+import { getProductsFromSupabase, deleteProductFromSupabase, getUsersFromClerk } from "@/utils/supabaseStorage";
 import { Product, User } from "@/types";
 import ProductCard from "@/components/ProductCard";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +27,7 @@ const AdminPanel = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'products' | 'users'>('products');
+  const [deletingProduct, setDeletingProduct] = useState<string | null>(null);
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -43,11 +45,12 @@ const AdminPanel = () => {
     try {
       const [productsData, usersData] = await Promise.all([
         getProductsFromSupabase(),
-        getUsersFromSupabase()
+        getUsersFromClerk() // Now using Clerk users
       ]);
       
       setProducts(productsData);
       setUsers(usersData);
+      console.log('Fetched data:', { products: productsData.length, users: usersData.length });
     } catch (error) {
       toast({
         title: "Error",
@@ -60,8 +63,21 @@ const AdminPanel = () => {
   };
 
   const handleDeleteProduct = async (productId: string) => {
+    if (deletingProduct) return; // Prevent multiple deletions
+    
+    setDeletingProduct(productId);
+    
     try {
-      const result = await deleteProductFromSupabase(productId);
+      console.log('Admin deleting product:', { productId, adminId: user?.id });
+      
+      // Find the product to get the owner's user ID
+      const product = products.find(p => p.id === productId);
+      if (!product) {
+        throw new Error('Product not found');
+      }
+      
+      const result = await deleteProductFromSupabase(productId, product.userId);
+      
       if (result.success) {
         setProducts(products.filter(p => p.id !== productId));
         toast({
@@ -71,12 +87,15 @@ const AdminPanel = () => {
       } else {
         throw new Error(result.error);
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Admin deletion error:', error);
       toast({
         title: "Error",
-        description: "Failed to delete product",
+        description: error.message || "Failed to delete product",
         variant: "destructive"
       });
+    } finally {
+      setDeletingProduct(null);
     }
   };
 
@@ -158,11 +177,12 @@ const AdminPanel = () => {
             
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                <CardTitle className="text-sm font-medium">Active Users</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.totalUsers}</div>
+                <p className="text-xs text-muted-foreground">Users with listings</p>
               </CardContent>
             </Card>
             
@@ -229,13 +249,43 @@ const AdminPanel = () => {
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                           {products.map((product) => (
-                            <ProductCard
-                              key={product.id}
-                              product={product}
-                              showActions={true}
-                              onDelete={handleDeleteProduct}
-                              onRefresh={fetchData}
-                            />
+                            <div key={product.id} className="relative">
+                              <ProductCard
+                                product={product}
+                                showActions={false}
+                                onRefresh={fetchData}
+                              />
+                              <div className="absolute top-2 right-2">
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button 
+                                      variant="destructive" 
+                                      size="sm"
+                                      disabled={deletingProduct === product.id}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete "{product.name}"? This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDeleteProduct(product.id)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </div>
                           ))}
                         </div>
                       )}
@@ -249,15 +299,15 @@ const AdminPanel = () => {
                 <div className="space-y-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle>All Users</CardTitle>
+                      <CardTitle>Active Users</CardTitle>
                       <CardDescription>
-                        Manage user accounts and permissions
+                        Users who have created listings on the platform (Clerk authenticated)
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       {users.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">
-                          No users found
+                          No active users found
                         </div>
                       ) : (
                         <Table>
@@ -266,7 +316,8 @@ const AdminPanel = () => {
                               <TableHead>Name</TableHead>
                               <TableHead>Email</TableHead>
                               <TableHead>Role</TableHead>
-                              <TableHead>Joined</TableHead>
+                              <TableHead>First Activity</TableHead>
+                              <TableHead>Source</TableHead>
                               <TableHead>Actions</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -282,6 +333,11 @@ const AdminPanel = () => {
                                 </TableCell>
                                 <TableCell>
                                   {new Date(user.createdAt).toLocaleDateString()}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline">
+                                    Clerk
+                                  </Badge>
                                 </TableCell>
                                 <TableCell>
                                   <DropdownMenu>

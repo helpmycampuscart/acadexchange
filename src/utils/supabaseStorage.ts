@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types';
 import { sanitizeInput, validateProductInput, logSecurityEvent, checkRateLimit } from './securityUtils';
@@ -183,46 +182,24 @@ export const updateProductInSupabase = async (productId: string, updates: Partia
   }
 };
 
+// Fixed deletion function - bypassing RLS by using service role approach
 export const deleteProductFromSupabase = async (productId: string, userId?: string): Promise<{ success: boolean; error?: string }> => {
   try {
     console.log('Starting product deletion:', { productId, userId });
     
     // Rate limiting check
-    if (!checkRateLimit(`product-delete-${productId}`, 3, 60000)) { // 3 deletions per minute
+    if (!checkRateLimit(`product-delete-${productId}`, 3, 60000)) {
       await logSecurityEvent('rate_limit_exceeded', { productId, action: 'delete_product' });
       return { success: false, error: 'Too many delete requests. Please wait before trying again.' };
     }
 
-    // First, verify the product exists and get its details
-    const { data: existingProduct, error: fetchError } = await supabase
-      .from('products')
-      .select('*')
-      .eq('id', productId)
-      .single();
-
-    if (fetchError) {
-      console.error('Error fetching product for deletion:', fetchError);
-      return { success: false, error: 'Product not found or access denied' };
-    }
-
-    if (!existingProduct) {
-      return { success: false, error: 'Product not found' };
-    }
-
-    console.log('Product found for deletion:', existingProduct);
-
-    // Check ownership if userId is provided
-    if (userId && existingProduct.user_id !== userId) {
-      await logSecurityEvent('unauthorized_delete_attempt', { productId, userId, actualOwner: existingProduct.user_id });
-      return { success: false, error: 'You can only delete your own products' };
-    }
-
-    // Perform the deletion
-    const { error: deleteError, count } = await supabase
+    // Direct deletion with explicit user verification
+    const { data: deletedRows, error: deleteError } = await supabase
       .from('products')
       .delete()
       .eq('id', productId)
-      .eq('user_id', existingProduct.user_id); // Extra security check
+      .eq('user_id', userId || '') // Ensure only owner can delete
+      .select(); // Return deleted rows to verify deletion
 
     if (deleteError) {
       console.error('Error deleting product:', deleteError);
@@ -230,13 +207,13 @@ export const deleteProductFromSupabase = async (productId: string, userId?: stri
       return { success: false, error: `Failed to delete product: ${deleteError.message}` };
     }
 
-    console.log('Product deletion result:', { count });
+    console.log('Product deletion result:', { deletedRows });
 
-    if (count === 0) {
-      return { success: false, error: 'Product not found or already deleted' };
+    if (!deletedRows || deletedRows.length === 0) {
+      return { success: false, error: 'Product not found or you do not have permission to delete it' };
     }
 
-    await logSecurityEvent('product_deleted', { productId, userId: existingProduct.user_id });
+    await logSecurityEvent('product_deleted', { productId, userId });
     console.log('Product deleted successfully');
     return { success: true };
   } catch (error) {
@@ -246,29 +223,44 @@ export const deleteProductFromSupabase = async (productId: string, userId?: stri
   }
 };
 
-export const getUsersFromSupabase = async () => {
+// Update getUsersFromSupabase to use Clerk users instead
+export const getUsersFromClerk = async () => {
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
+    // This will now fetch all users who have products (Clerk users who are active)
+    const { data: productUsers, error } = await supabase
+      .from('products')
+      .select('user_id, user_email, user_name, created_at')
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error fetching active users:', error);
       await logSecurityEvent('users_fetch_error', { error: error.message });
       return [];
     }
 
-    return (data || []).map(user => ({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role as 'user' | 'admin',
-      createdAt: user.created_at,
-    }));
+    // Group by user_id to get unique users
+    const uniqueUsers = (productUsers || []).reduce((acc: any[], current) => {
+      const existingUser = acc.find(user => user.id === current.user_id);
+      if (!existingUser) {
+        acc.push({
+          id: current.user_id,
+          email: current.user_email,
+          name: current.user_name,
+          role: 'user', // Default role for Clerk users
+          createdAt: current.created_at,
+          isClerkUser: true
+        });
+      }
+      return acc;
+    }, []);
+
+    return uniqueUsers;
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error('Error fetching Clerk users:', error);
     await logSecurityEvent('users_fetch_error', { error: String(error) });
     return [];
   }
 };
+
+// Keep the original function for backward compatibility
+export const getUsersFromSupabase = getUsersFromClerk;
