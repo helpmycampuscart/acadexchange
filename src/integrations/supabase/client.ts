@@ -18,9 +18,18 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
+// Cache to prevent duplicate sync attempts
+const syncedUsers = new Set<string>();
+
 // Enhanced function to sync user data with better error handling
 export const syncUserWithSupabase = async (userId: string, email: string, name: string) => {
   try {
+    // Prevent duplicate sync attempts for the same user
+    if (syncedUsers.has(userId)) {
+      console.log('User already synced, skipping:', userId);
+      return { success: true };
+    }
+
     console.log('Syncing user with Supabase:', { userId, email, name });
     
     // Check if user exists first
@@ -51,11 +60,13 @@ export const syncUserWithSupabase = async (userId: string, email: string, name: 
         // Don't fail if it's a duplicate key error (user already exists)
         if (error.code === '23505') {
           console.log('User already exists (duplicate key), continuing...');
+          syncedUsers.add(userId);
           return { success: true };
         }
         return { success: false, error: error.message };
       } else {
         console.log('User created successfully');
+        syncedUsers.add(userId);
         return { success: true };
       }
     } else {
@@ -80,6 +91,7 @@ export const syncUserWithSupabase = async (userId: string, email: string, name: 
         }
       }
       
+      syncedUsers.add(userId);
       return { success: true };
     }
   } catch (error) {

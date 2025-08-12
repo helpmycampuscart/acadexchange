@@ -53,7 +53,7 @@ export const validateProductInput = (product: any): { valid: boolean; error?: st
   return { valid: true };
 };
 
-// Enhanced security event logging with structured data
+// Enhanced security event logging with graceful error handling
 export const logSecurityEvent = async (eventType: string, details: any = {}) => {
   try {
     const securityLog = {
@@ -66,19 +66,31 @@ export const logSecurityEvent = async (eventType: string, details: any = {}) => 
     
     console.log(`Security Event: ${eventType}`, securityLog);
     
-    // Store security events in the database for production monitoring
-    try {
-      await supabase
-        .from('admin_audit_log')
-        .insert({
-          admin_id: details.userId || 'system',
-          action: eventType,
-          target_user_id: details.targetUserId || null,
-          details: securityLog
-        });
-    } catch (auditError) {
-      // Don't fail the main operation if audit logging fails
-      console.warn('Failed to log security event to database:', auditError);
+    // Only attempt to log to database if we have admin privileges
+    // Skip database logging for non-admin users to prevent 401 errors
+    if (details.userId) {
+      try {
+        // Check if user is admin before attempting to log
+        const { data: user } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', details.userId)
+          .single();
+        
+        if (user?.role === 'admin') {
+          await supabase
+            .from('admin_audit_log')
+            .insert({
+              admin_id: details.userId,
+              action: eventType,
+              target_user_id: details.targetUserId || null,
+              details: securityLog
+            });
+        }
+      } catch (auditError) {
+        // Silently handle audit logging failures to prevent blocking main operations
+        console.warn('Failed to log security event to database (this is normal for non-admin users):', auditError);
+      }
     }
   } catch (error) {
     console.error('Failed to log security event:', error);

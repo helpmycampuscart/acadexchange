@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { PlusCircle, Package } from "lucide-react";
+import { PlusCircle, Package, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -126,9 +127,9 @@ const MyListings = () => {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center p-4">
           <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Please sign in to view your listings</h1>
+            <h1 className="text-xl md:text-2xl font-bold mb-4">Please sign in to view your listings</h1>
             <Button onClick={() => navigate('/dashboard')}>
               Go to Dashboard
             </Button>
@@ -146,109 +147,114 @@ const MyListings = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       
-      <div className="flex-1 container mx-auto px-4 py-8">
+      <div className="flex-1 container mx-auto px-4 py-4 md:py-8">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
+          
+          {/* Header Section - Mobile Optimized */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 md:mb-8 gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-4">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">
                 My Listings
               </h1>
-              <p className="text-muted-foreground text-lg">
+              <p className="text-sm md:text-lg text-muted-foreground">
                 Manage your posted items and track your sales
               </p>
             </div>
-            <Button onClick={() => navigate('/sell')} className="flex items-center space-x-2">
+            <Button 
+              onClick={() => navigate('/sell')} 
+              className="w-full sm:w-auto flex items-center justify-center gap-2 text-sm"
+            >
               <PlusCircle className="h-4 w-4" />
-              <span>List New Item</span>
+              List New Item
             </Button>
           </div>
 
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card>
+          {/* Statistics Cards - Mobile Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 mb-6 md:mb-8">
+            <Card className="p-3 md:p-6">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Listings</CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-xs md:text-sm font-medium">Total Listings</CardTitle>
+                <Package className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{products.length}</div>
+              <CardContent className="p-0">
+                <div className="text-lg md:text-2xl font-bold">{products.length}</div>
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="p-3 md:p-6">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Listings</CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-xs md:text-sm font-medium">Active Listings</CardTitle>
+                <Package className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">{activeProducts.length}</div>
+              <CardContent className="p-0">
+                <div className="text-lg md:text-2xl font-bold text-green-600">{activeProducts.length}</div>
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="p-3 md:p-6 col-span-2 lg:col-span-1">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Sold Items</CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-xs md:text-sm font-medium">Sold Items</CardTitle>
+                <Package className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">{soldProducts.length}</div>
+              <CardContent className="p-0">
+                <div className="text-lg md:text-2xl font-bold text-blue-600">{soldProducts.length}</div>
               </CardContent>
             </Card>
           </div>
 
           {loading ? (
-            <div className="text-center py-12">
-              <div className="text-lg">Loading your listings...</div>
+            <div className="text-center py-8 md:py-12">
+              <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-primary mx-auto mb-3 md:mb-4"></div>
+              <div className="text-sm md:text-lg">Loading your listings...</div>
             </div>
           ) : products.length === 0 ? (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <Package className="h-16 w-16 text-muted-foreground mb-4" />
-                <CardTitle className="text-xl mb-2">No listings yet</CardTitle>
-                <CardDescription className="text-center mb-6">
+              <CardContent className="flex flex-col items-center justify-center py-12 md:py-16 text-center">
+                <Package className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground mb-4" />
+                <CardTitle className="text-lg md:text-xl mb-2">No listings yet</CardTitle>
+                <CardDescription className="text-center mb-6 max-w-md">
                   Start selling by listing your first item
                 </CardDescription>
-                <Button onClick={() => navigate('/sell')} className="flex items-center space-x-2">
+                <Button onClick={() => navigate('/sell')} className="flex items-center gap-2 text-sm">
                   <PlusCircle className="h-4 w-4" />
-                  <span>List Your First Item</span>
+                  List Your First Item
                 </Button>
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-8">
+            <div className="space-y-6 md:space-y-8">
+              
               {/* Active Listings */}
               {activeProducts.length > 0 && (
                 <div>
-                  <h2 className="text-2xl font-bold mb-4">Active Listings ({activeProducts.length})</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <h2 className="text-lg md:text-2xl font-bold mb-4">Active Listings ({activeProducts.length})</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     {activeProducts.map((product) => (
-                      <div key={product.id} className="relative">
+                      <div key={product.id} className="relative group">
                         <ProductCard
                           product={product}
                           showActions={true}
                           onEdit={handleEditProduct}
-                          onDelete={(productId) => {
-                            // This will be handled by the AlertDialog in ProductCard
-                          }}
+                          onDelete={() => {}}
                           onRefresh={fetchMyProducts}
                         />
                         
-                        {/* Enhanced Delete Confirmation */}
+                        {/* Mobile-friendly Delete Button */}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
                               variant="destructive"
                               size="sm"
-                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-2 right-2 h-8 w-8 p-0 opacity-90 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
                               disabled={deletingProduct === product.id}
                             >
-                              {deletingProduct === product.id ? 'Deleting...' : 'Delete'}
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Product</AlertDialogTitle>
-                              <AlertDialogDescription>
+                              <AlertDialogTitle className="text-sm md:text-base">Delete Product</AlertDialogTitle>
+                              <AlertDialogDescription className="text-xs md:text-sm">
                                 Are you sure you want to delete "{product.name}"? 
                                 <br />
                                 <strong>This action cannot be undone.</strong>
@@ -258,11 +264,11 @@ const MyListings = () => {
                                 </small>
                               </AlertDialogDescription>
                             </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                              <AlertDialogCancel className="w-full sm:w-auto text-sm">Cancel</AlertDialogCancel>
                               <AlertDialogAction 
                                 onClick={() => handleDeleteProduct(product.id)}
-                                className="bg-red-600 hover:bg-red-700"
+                                className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-sm"
                                 disabled={deletingProduct === product.id}
                               >
                                 {deletingProduct === product.id ? 'Deleting...' : 'Delete Product'}
@@ -279,36 +285,34 @@ const MyListings = () => {
               {/* Sold Items */}
               {soldProducts.length > 0 && (
                 <div>
-                  <h2 className="text-2xl font-bold mb-4">Sold Items ({soldProducts.length})</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <h2 className="text-lg md:text-2xl font-bold mb-4">Sold Items ({soldProducts.length})</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     {soldProducts.map((product) => (
-                      <div key={product.id} className="relative">
+                      <div key={product.id} className="relative group">
                         <ProductCard
                           product={product}
                           showActions={true}
                           onEdit={handleEditProduct}
-                          onDelete={(productId) => {
-                            // This will be handled by the AlertDialog
-                          }}
+                          onDelete={() => {}}
                           onRefresh={fetchMyProducts}
                         />
                         
-                        {/* Enhanced Delete Confirmation for Sold Items */}
+                        {/* Mobile-friendly Delete Button for Sold Items */}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
                               variant="destructive"
                               size="sm"
-                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-2 right-2 h-8 w-8 p-0 opacity-90 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
                               disabled={deletingProduct === product.id}
                             >
-                              {deletingProduct === product.id ? 'Deleting...' : 'Delete'}
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Sold Product</AlertDialogTitle>
-                              <AlertDialogDescription>
+                              <AlertDialogTitle className="text-sm md:text-base">Delete Sold Product</AlertDialogTitle>
+                              <AlertDialogDescription className="text-xs md:text-sm">
                                 Are you sure you want to delete the sold item "{product.name}"? 
                                 <br />
                                 <strong>This will permanently remove it from your sales history.</strong>
@@ -318,11 +322,11 @@ const MyListings = () => {
                                 </small>
                               </AlertDialogDescription>
                             </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                              <AlertDialogCancel className="w-full sm:w-auto text-sm">Cancel</AlertDialogCancel>
                               <AlertDialogAction 
                                 onClick={() => handleDeleteProduct(product.id)}
-                                className="bg-red-600 hover:bg-red-700"
+                                className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-sm"
                                 disabled={deletingProduct === product.id}
                               >
                                 {deletingProduct === product.id ? 'Deleting...' : 'Delete Product'}
