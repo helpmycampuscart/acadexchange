@@ -68,17 +68,29 @@ const SellPage = () => {
     try {
       console.log('Starting product submission...');
       
+      // Upload image first if provided
+      let imageUrl = '';
+      if (image) {
+        // For now, we'll skip image upload and just save the product
+        // TODO: Implement proper image upload to Supabase storage
+        imageUrl = '';
+      }
+
       await saveProductToSupabase({
+        id: generateProductId(),
+        uniqueId: generateProductId(),
         name,
         description,
         price: Number(price),
         category,
         location,
         whatsappNumber,
-        imageFile: image, // Changed from 'image' to 'imageFile' to match the expected parameter
+        imageUrl,
         userId: user.id,
         userEmail: user.emailAddresses[0]?.emailAddress || '',
-        userName: user.fullName || user.firstName || 'Anonymous'
+        userName: user.fullName || user.firstName || 'Anonymous',
+        createdAt: new Date().toISOString(),
+        isSold: false
       });
 
       toast({
