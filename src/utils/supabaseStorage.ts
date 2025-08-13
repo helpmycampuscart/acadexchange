@@ -76,8 +76,11 @@ export const saveProductToSupabase = async (product: Product): Promise<{ success
 
 export const getProductsFromSupabase = async (): Promise<Product[]> => {
   try {
+    console.log('Fetching products from Supabase...');
+    
+    // Use the public view for basic product browsing - excludes sensitive data
     const { data, error } = await supabase
-      .from('products')
+      .from('products_public')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -95,10 +98,10 @@ export const getProductsFromSupabase = async (): Promise<Product[]> => {
       price: item.price,
       category: item.category,
       location: item.location,
-      whatsappNumber: item.whatsapp_number,
+      whatsappNumber: '', // Not available in public view for security
       imageUrl: item.image_url,
-      userId: item.user_id,
-      userEmail: item.user_email,
+      userId: '', // Not available in public view for security
+      userEmail: '', // Not available in public view for security
       userName: item.user_name,
       createdAt: item.created_at,
       isSold: item.is_sold,

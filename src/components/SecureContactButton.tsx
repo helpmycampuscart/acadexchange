@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useUser } from "@clerk/clerk-react";
 import { useToast } from "@/hooks/use-toast";
 import { logSecurityEvent } from "@/utils/securityUtils";
+import { supabase } from "@/lib/supabase";
 
 interface SecureContactButtonProps {
   productId: string;
@@ -38,16 +39,6 @@ const SecureContactButton = ({
       return;
     }
 
-    // Security check: Contact info must be available
-    if (!whatsappNumber) {
-      toast({
-        title: "Contact unavailable",
-        description: "Contact information is not available for this product",
-        variant: "destructive"
-      });
-      return;
-    }
-
     // Security check: Product shouldn't be sold
     if (isSold) {
       toast({
@@ -61,15 +52,52 @@ const SecureContactButton = ({
     setIsContacting(true);
     
     try {
+      // Securely fetch contact information using database function
+      const { data, error } = await supabase.rpc('get_product_contact_info', {
+        product_id: productId
+      });
+
+      if (error) {
+        console.error('Error fetching contact info:', error);
+        toast({
+          title: "Error",
+          description: "Unable to access contact information. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        toast({
+          title: "Contact unavailable",
+          description: "Contact information is not available for this product",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const contactInfo = data[0];
+      const phoneNumber = contactInfo.whatsapp_number;
+
+      if (!phoneNumber) {
+        toast({
+          title: "Contact unavailable",
+          description: "WhatsApp number not available for this product",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Log contact access for security monitoring
       await logSecurityEvent('contact_accessed', {
         productId,
         buyerId: user.id,
+        sellerId: contactInfo.user_id,
         buyerEmail: user.emailAddresses[0]?.emailAddress
       });
 
       const message = `Hi! I'm interested in your product:\n\n📦 ${productName}\n🆔 Product ID: ${productUniqueId}\n💰 Price: ₹${productPrice.toLocaleString()}\n\nIs it still available?`;
-      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+      const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
       
       window.open(whatsappUrl, '_blank');
       

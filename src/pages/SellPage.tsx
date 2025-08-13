@@ -15,7 +15,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SearchableLocationSelect from "@/components/SearchableLocationSelect";
 import { CATEGORIES } from "@/types";
-import { saveProductToSupabase } from "@/utils/supabaseStorage";
+import { saveProductToSupabase, generateProductId } from "@/utils/supabaseStorage";
 
 const SellPage = () => {
   const [name, setName] = useState("");

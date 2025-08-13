@@ -118,7 +118,48 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      products_public: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          image_url: string | null
+          is_sold: boolean | null
+          location: string | null
+          name: string | null
+          price: number | null
+          unique_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_sold?: boolean | null
+          location?: string | null
+          name?: string | null
+          price?: number | null
+          unique_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_sold?: boolean | null
+          location?: string | null
+          name?: string | null
+          price?: number | null
+          unique_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_access_product_details: {
@@ -128,6 +169,14 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_product_contact_info: {
+        Args: { product_id: string }
+        Returns: {
+          user_email: string
+          whatsapp_number: string
+          user_id: string
+        }[]
       }
       log_admin_action: {
         Args: {
