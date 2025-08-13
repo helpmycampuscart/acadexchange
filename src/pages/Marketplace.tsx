@@ -9,7 +9,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import ProductCard from "@/components/ProductCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Product, CATEGORIES, LOCATIONS } from "@/types";
+import SearchableLocationSelect from "@/components/SearchableLocationSelect";
+import { Product, CATEGORIES } from "@/types";
 import { getProductsFromSupabase } from "@/utils/supabaseStorage";
 import { getProducts } from "@/utils/storage";
 
@@ -18,7 +19,7 @@ const Marketplace = () => {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [selectedLocation, setSelectedLocation] = useState<string>("all");
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -99,7 +100,7 @@ const Marketplace = () => {
     }
 
     // Filter by location
-    if (selectedLocation !== "all") {
+    if (selectedLocation) {
       filtered = filtered.filter(product => product.location === selectedLocation);
     }
 
@@ -112,13 +113,13 @@ const Marketplace = () => {
   const clearFilters = () => {
     setSearchTerm("");
     setSelectedCategory("all");
-    setSelectedLocation("all");
+    setSelectedLocation("");
   };
 
   const activeFiltersCount = [
     searchTerm,
     selectedCategory !== "all" ? selectedCategory : null,
-    selectedLocation !== "all" ? selectedLocation : null
+    selectedLocation
   ].filter(Boolean).length;
 
   return (
@@ -178,20 +179,14 @@ const Marketplace = () => {
               </SelectContent>
             </Select>
 
-            {/* Location Filter */}
-            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-              <SelectTrigger className="w-full lg:w-48">
-                <SelectValue placeholder="All Locations" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Locations</SelectItem>
-                {LOCATIONS.map(location => (
-                  <SelectItem key={location} value={location}>
-                    {location}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Location Filter with Search */}
+            <div className="w-full lg:w-64">
+              <SearchableLocationSelect
+                value={selectedLocation}
+                onValueChange={setSelectedLocation}
+                placeholder="All Locations"
+              />
+            </div>
 
             {/* Clear Filters */}
             {activeFiltersCount > 0 && (
@@ -218,7 +213,7 @@ const Marketplace = () => {
                   {selectedCategory}
                 </Badge>
               )}
-              {selectedLocation !== "all" && (
+              {selectedLocation && (
                 <Badge variant="secondary">
                   <MapPin className="h-3 w-3 mr-1" />
                   {selectedLocation}

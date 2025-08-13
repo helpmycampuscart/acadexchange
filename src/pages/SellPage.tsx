@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
@@ -74,7 +75,7 @@ const SellPage = () => {
         category,
         location,
         whatsappNumber,
-        image,
+        imageFile: image, // Changed from 'image' to 'imageFile' to match the expected parameter
         userId: user.id,
         userEmail: user.emailAddresses[0]?.emailAddress || '',
         userName: user.fullName || user.firstName || 'Anonymous'
