@@ -9,10 +9,27 @@ const corsHeaders = {
 
 const formatPhoneNumber = (phoneNumber: string): string => {
   if (!phoneNumber) return "";
-  let clean = phoneNumber.replace(/\\D/g, "");
-  if (clean.startsWith("91") && clean.length === 12) return clean;
-  if (clean.length === 10) return "91" + clean;
-  if (clean.startsWith("0") && clean.length === 11) return "91" + clean.substring(1);
+  
+  // Remove all non-digit characters
+  let clean = phoneNumber.replace(/\D/g, "");
+  console.log("[get-product-contact] Cleaned number:", clean);
+  
+  // If it already has country code (starts with 91 and is 12 digits)
+  if (clean.startsWith("91") && clean.length === 12) {
+    return clean;
+  }
+  
+  // If it's a 10-digit number, add 91
+  if (clean.length === 10) {
+    return "91" + clean;
+  }
+  
+  // If it starts with 0 and is 11 digits, replace 0 with 91
+  if (clean.startsWith("0") && clean.length === 11) {
+    return "91" + clean.substring(1);
+  }
+  
+  // Return as is if we can't format it properly
   return clean;
 };
 
@@ -28,6 +45,7 @@ serve(async (req) => {
     );
 
     const { productId, viewerId } = await req.json();
+    console.log("[get-product-contact] Request:", { productId, viewerId });
 
     if (!productId) {
       return new Response(JSON.stringify({ error: "Missing productId" }), {
@@ -36,14 +54,15 @@ serve(async (req) => {
       });
     }
 
-    // Load product
+    // Get product details
     const { data: product, error: prodErr } = await supabase
       .from("products")
       .select("*")
       .eq("id", productId)
-      .maybeSingle();
+      .single();
 
     if (prodErr || !product) {
+      console.error("[get-product-contact] Product error:", prodErr);
       return new Response(JSON.stringify({ error: "Product not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -57,7 +76,7 @@ serve(async (req) => {
       });
     }
 
-    // Prevent returning own contact info (optional)
+    // Don't return own contact info
     if (viewerId && product.user_id === viewerId) {
       return new Response(JSON.stringify({ error: "Own product" }), {
         status: 400,
@@ -65,27 +84,30 @@ serve(async (req) => {
       });
     }
 
-    // Prefer product_contacts
     let whatsapp = "";
     let sellerId = product.user_id;
     let sellerEmail = product.user_email;
 
+    // Try to get contact from product_contacts table first
     const { data: contact, error: contactErr } = await supabase
       .from("product_contacts")
       .select("whatsapp_number, user_id, user_email")
       .eq("product_id", productId)
-      .maybeSingle();
+      .single();
 
     if (!contactErr && contact?.whatsapp_number) {
+      console.log("[get-product-contact] Using contact table:", contact.whatsapp_number);
       whatsapp = contact.whatsapp_number;
       sellerId = contact.user_id ?? sellerId;
       sellerEmail = contact.user_email ?? sellerEmail;
     } else if (product.whatsapp_number) {
-      // Fallback to products table
+      console.log("[get-product-contact] Using product table:", product.whatsapp_number);
       whatsapp = product.whatsapp_number;
     }
 
+    // Format the phone number
     whatsapp = formatPhoneNumber(whatsapp);
+    console.log("[get-product-contact] Formatted number:", whatsapp);
 
     if (!whatsapp) {
       return new Response(JSON.stringify({ error: "Contact unavailable" }), {
@@ -105,7 +127,7 @@ serve(async (req) => {
       }
     );
   } catch (e) {
-    console.error("[get-product-contact] unexpected error:", e);
+    console.error("[get-product-contact] Unexpected error:", e);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

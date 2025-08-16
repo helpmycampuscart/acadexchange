@@ -19,73 +19,91 @@ serve(async (req) => {
     );
 
     const { productId, userId } = await req.json();
+    console.log("[delete-product] Request:", { productId, userId });
 
     if (!productId || !userId) {
+      console.error("[delete-product] Missing data:", { productId, userId });
       return new Response(JSON.stringify({ error: "Missing productId or userId" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    // Verify product exists and user owns it
     const { data: product, error: findErr } = await supabase
       .from("products")
-      .select("*")
+      .select("user_id, name")
       .eq("id", productId)
-      .maybeSingle();
+      .single();
 
-    if (findErr || !product) {
+    if (findErr) {
+      console.error("[delete-product] Find error:", findErr);
       return new Response(JSON.stringify({ error: "Product not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    if (!product) {
+      return new Response(JSON.stringify({ error: "Product not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Check authorization
     if (product.user_id !== userId) {
+      console.error("[delete-product] Auth error:", { productUserId: product.user_id, userId });
       return new Response(JSON.stringify({ error: "Not authorized" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Delete contact info first
+    console.log("[delete-product] Deleting product:", { productId, name: product.name });
+
+    // Delete contact info first (if exists)
     const { error: contactErr } = await supabase
       .from("product_contacts")
       .delete()
       .eq("product_id", productId);
 
     if (contactErr) {
-      console.warn("[delete-product] contact delete warning:", contactErr.message);
+      console.warn("[delete-product] Contact delete warning:", contactErr.message);
     }
 
-    // Delete from public table explicitly (no triggers here)
+    // Delete from products_public
     const { error: pubErr } = await supabase
       .from("products_public")
       .delete()
       .eq("id", productId);
 
     if (pubErr) {
-      console.warn("[delete-product] public delete warning:", pubErr.message);
+      console.warn("[delete-product] Public delete warning:", pubErr.message);
     }
 
-    // Delete the product
+    // Delete main product
     const { error: delErr } = await supabase
       .from("products")
       .delete()
       .eq("id", productId);
 
     if (delErr) {
+      console.error("[delete-product] Delete error:", delErr);
       return new Response(JSON.stringify({ error: delErr.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    console.log("[delete-product] Success:", { productId });
+    
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("[delete-product] unexpected error:", e);
+    console.error("[delete-product] Unexpected error:", e);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -22,7 +22,7 @@ export const useStats = () => {
       try {
         console.log('Fetching stats from Supabase...');
         
-        // Get total products count from products_public (which syncs with products table)
+        // Get total products count from products_public
         const { count: totalProducts, error: productsError } = await supabase
           .from('products_public')
           .select('*', { count: 'exact', head: true });
@@ -31,13 +31,21 @@ export const useStats = () => {
           console.error('Error fetching products count:', productsError);
         }
 
-        // Get active users count (users who have created products)
-        const { count: activeUsers, error: usersError } = await supabase
-          .from('users')
-          .select('*', { count: 'exact', head: true });
+        // Get active users count (users who have created at least one product)
+        const { data: activeUsersData, error: usersError } = await supabase
+          .from('products')
+          .select('user_id', { count: 'exact' })
+          .not('user_id', 'is', null);
+
+        let activeUsersCount = 0;
+        if (!usersError && activeUsersData) {
+          // Get unique user IDs
+          const uniqueUserIds = new Set(activeUsersData.map(p => p.user_id));
+          activeUsersCount = uniqueUserIds.size;
+        }
 
         if (usersError) {
-          console.error('Error fetching users count:', usersError);
+          console.error('Error fetching active users:', usersError);
         }
 
         // Get sold products count
@@ -50,20 +58,15 @@ export const useStats = () => {
           console.error('Error fetching sold products count:', soldError);
         }
 
-        // Set stats with fallback to 0 if any query failed
         const finalStats = {
           totalProducts: totalProducts || 0,
-          activeUsers: activeUsers || 0,
+          activeUsers: activeUsersCount || 0,
           productsSold: productsSold || 0
         };
 
         setStats(finalStats);
         console.log('Successfully fetched stats:', finalStats);
-
-        // Clear any previous errors if we got data successfully
-        if (!productsError && !usersError && !soldError) {
-          setError(null);
-        }
+        setError(null);
 
       } catch (error) {
         console.error('Error fetching stats from Supabase:', error);
@@ -86,9 +89,9 @@ export const useStats = () => {
         }
       )
       .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'users' }, 
+        { event: '*', schema: 'public', table: 'products' }, 
         () => {
-          console.log('Users table changed, refetching stats...');
+          console.log('Products table changed, refetching stats...');
           fetchStats();
         }
       )

@@ -19,41 +19,38 @@ serve(async (req) => {
     );
 
     const { userId, userEmail, userName } = await req.json();
+    console.log("[list-user-products] Request:", { userId, userEmail, userName });
 
-    if (!userId || !userEmail || !userName) {
-      return new Response(JSON.stringify({ error: "Missing user information" }), {
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Missing userId" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Fetch products that belong to the user (by id/email/name to be safe)
+    // Fetch products that belong to the user (using multiple criteria for safety)
     const { data: products, error } = await supabase
       .from("products")
       .select("*")
-      .or(
-        [
-          `user_id.eq.${userId}`,
-          `user_email.eq.${userEmail}`,
-          `user_name.eq.${userName}`,
-        ].join(",")
-      )
+      .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("[list-user-products] error:", error);
+      console.error("[list-user-products] Database error:", error);
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    console.log("[list-user-products] Found products:", products?.length || 0);
+
     return new Response(JSON.stringify({ success: true, products: products ?? [] }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("[list-user-products] unexpected error:", e);
+    console.error("[list-user-products] Unexpected error:", e);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -18,10 +18,26 @@ interface SecureContactButtonProps {
 
 const formatWhatsAppNumber = (phoneNumber: string): string => {
   if (!phoneNumber) return "";
-  let clean = phoneNumber.replace(/\\D/g, "");
-  if (clean.startsWith("91") && clean.length === 12) return clean;
-  if (clean.length === 10) return "91" + clean;
-  if (clean.startsWith("0") && clean.length === 11) return "91" + clean.substring(1);
+  
+  // Remove all non-digit characters
+  let clean = phoneNumber.replace(/\D/g, "");
+  
+  // If it already has country code (starts with 91 and is 12 digits)
+  if (clean.startsWith("91") && clean.length === 12) {
+    return clean;
+  }
+  
+  // If it's a 10-digit number, add 91 (Indian country code)
+  if (clean.length === 10) {
+    return "91" + clean;
+  }
+  
+  // If it starts with 0 and is 11 digits, replace 0 with 91
+  if (clean.startsWith("0") && clean.length === 11) {
+    return "91" + clean.substring(1);
+  }
+  
+  // Return as is if we can't format it properly
   return clean;
 };
 
@@ -59,7 +75,9 @@ const SecureContactButton = ({
     setIsContacting(true);
 
     try {
-      // Use Edge Function to safely retrieve contact (bypasses RLS)
+      console.log("Getting contact info for product:", productId);
+      
+      // Use Edge Function to get contact info
       const { data, error } = await supabase.functions.invoke("get-product-contact", {
         body: { productId, viewerId: user.id },
       });
@@ -68,17 +86,24 @@ const SecureContactButton = ({
 
       if (error) {
         console.warn("get-product-contact error:", error);
-      }
-
-      if (data?.contact?.whatsappNumber) {
+        // Fallback to provided whatsapp number
+        if (whatsappNumber) {
+          phoneNumber = whatsappNumber;
+          console.log("Using fallback WhatsApp number:", phoneNumber);
+        }
+      } else if (data?.contact?.whatsappNumber) {
         phoneNumber = data.contact.whatsappNumber;
+        console.log("Got WhatsApp number from API:", phoneNumber);
       } else if (whatsappNumber) {
         phoneNumber = whatsappNumber;
+        console.log("Using provided WhatsApp number:", phoneNumber);
       }
 
+      // Format the phone number
       phoneNumber = formatWhatsAppNumber(phoneNumber);
+      console.log("Formatted phone number:", phoneNumber);
 
-      if (!phoneNumber) {
+      if (!phoneNumber || phoneNumber.length < 10) {
         toast({
           title: "Contact unavailable",
           description: "WhatsApp number not available for this product.",
@@ -87,6 +112,7 @@ const SecureContactButton = ({
         return;
       }
 
+      // Log security event
       try {
         await logSecurityEvent("contact_accessed", {
           productId,
@@ -97,9 +123,18 @@ const SecureContactButton = ({
         console.error("Error logging security event:", e);
       }
 
-      const message = `Hi! I'm interested in your product:\\n\\n📦 ${productName}\\n🆔 Product ID: ${productUniqueId}\\n💰 Price: ₹${productPrice.toLocaleString()}\\n\\nIs it still available?`;
-      const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+      // Create WhatsApp message
+      const message = `Hi! I'm interested in your product:
 
+📦 ${productName}
+🆔 Product ID: ${productUniqueId}
+💰 Price: ₹${productPrice.toLocaleString()}
+
+Is it still available?`;
+
+      const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+      
+      console.log("Opening WhatsApp URL:", whatsappUrl);
       window.open(whatsappUrl, "_blank");
 
       toast({
