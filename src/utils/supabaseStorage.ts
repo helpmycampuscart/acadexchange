@@ -22,7 +22,7 @@ export const saveProductToSupabase = async (product: Product): Promise<void> => 
 
     console.log('Inserting product via Edge Function...');
     
-    // Call the Edge Function instead of direct database insert
+    // Call the Edge Function - it now handles both product and contact info creation
     const { data, error } = await supabase.functions.invoke('create-product', {
       body: { product }
     });
@@ -37,55 +37,9 @@ export const saveProductToSupabase = async (product: Product): Promise<void> => 
     }
 
     console.log('Product created successfully via Edge Function');
-
-    // CRITICAL: Save to product_contacts for secure contact info
-    console.log('Saving product contact info...');
-    await saveProductContactInfo(product);
-    console.log('Product contact info saved successfully');
     
   } catch (error) {
     console.error('Database error saving product:', error);
-    
-    // Security event logging
-    console.log('Security Event: database_error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      productId: product.id,
-      userId: product.userId
-    });
-    
-    throw error;
-  }
-};
-
-export const saveProductContactInfo = async (product: Product): Promise<void> => {
-  try {
-    console.log('Saving contact info for product:', product.id);
-    console.log('Contact data:', {
-      product_id: product.id,
-      user_id: product.userId,
-      user_email: product.userEmail,
-      whatsapp_number: product.whatsappNumber
-    });
-
-    const { error } = await supabase
-      .from('product_contacts')
-      .upsert({
-        product_id: product.id,
-        user_id: product.userId,
-        user_email: product.userEmail,
-        whatsapp_number: product.whatsappNumber
-      }, {
-        onConflict: 'product_id'
-      });
-
-    if (error) {
-      console.error('Error saving product contact info:', error);
-      throw error;
-    }
-
-    console.log('Contact info saved successfully for product:', product.id);
-  } catch (error) {
-    console.error('Error in saveProductContactInfo:', error);
     throw error;
   }
 };
@@ -132,6 +86,54 @@ export const getProductsFromSupabase = async (): Promise<Product[]> => {
     
   } catch (error) {
     console.error('Error in getProductsFromSupabase:', error);
+    throw error;
+  }
+};
+
+// Get user's own products from the private products table
+export const getUserProductsFromSupabase = async (userId: string): Promise<Product[]> => {
+  try {
+    console.log('Fetching user products from Supabase for user:', userId);
+    
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching user products:', error);
+      throw error;
+    }
+
+    if (!data) {
+      console.log('No products found for user');
+      return [];
+    }
+
+    // Map the data to our Product interface
+    const products: Product[] = data.map(item => ({
+      id: item.id,
+      uniqueId: item.unique_id,
+      name: item.name,
+      description: item.description || '',
+      price: item.price,
+      category: item.category,
+      location: item.location,
+      whatsappNumber: item.whatsapp_number,
+      imageUrl: item.image_url || '',
+      userId: item.user_id,
+      userEmail: item.user_email,
+      userName: item.user_name,
+      createdAt: item.created_at,
+      isSold: item.is_sold
+    }));
+
+    console.log(`Fetched ${products.length} products for user`);
+    return products;
+    
+  } catch (error) {
+    console.error('Error in getUserProductsFromSupabase:', error);
     throw error;
   }
 };
