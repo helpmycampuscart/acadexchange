@@ -78,37 +78,45 @@ const SecureContactButton = ({
     setIsContacting(true);
     
     try {
-      // Securely fetch contact information using database function
+      // First try to get contact info from database function
       const { data, error } = await supabase.rpc('get_product_contact_info', {
         product_id: productId
       });
 
-      if (error) {
-        console.error('Database error:', error);
-        toast({
-          title: "Error",
-          description: "Unable to access contact information. Please try again.",
-          variant: "destructive"
-        });
-        return;
+      let phoneNumber = '';
+      let contactInfo = null;
+
+      if (error || !data || data.length === 0) {
+        console.log('No contact info from RPC, trying direct query...');
+        
+        // Fallback: try to get contact info directly
+        const { data: directData, error: directError } = await supabase
+          .from('product_contacts')
+          .select('whatsapp_number, user_id, user_email')
+          .eq('product_id', productId)
+          .maybeSingle();
+
+        if (directError) {
+          console.error('Direct query error:', directError);
+        }
+
+        contactInfo = directData;
+      } else {
+        contactInfo = data[0];
       }
 
-      if (!data || data.length === 0) {
-        toast({
-          title: "Contact unavailable",
-          description: "Contact information is not available for this product",
-          variant: "destructive"
-        });
-        return;
+      // If still no contact info, try using the whatsappNumber prop as fallback
+      if (!contactInfo?.whatsapp_number && whatsappNumber) {
+        phoneNumber = whatsappNumber;
+        console.log('Using fallback WhatsApp number from props');
+      } else if (contactInfo?.whatsapp_number) {
+        phoneNumber = contactInfo.whatsapp_number;
       }
-
-      const contactInfo = data[0];
-      let phoneNumber = contactInfo?.whatsapp_number;
 
       if (!phoneNumber) {
         toast({
           title: "Contact unavailable",
-          description: "WhatsApp number not available for this product",
+          description: "WhatsApp number not available for this product. Please contact the seller directly.",
           variant: "destructive"
         });
         return;
@@ -127,12 +135,17 @@ const SecureContactButton = ({
       }
 
       // Log contact access for security monitoring
-      await logSecurityEvent('contact_accessed', {
-        productId,
-        buyerId: user.id,
-        sellerId: contactInfo.user_id,
-        buyerEmail: user.emailAddresses[0]?.emailAddress
-      });
+      try {
+        await logSecurityEvent('contact_accessed', {
+          productId,
+          buyerId: user.id,
+          sellerId: contactInfo?.user_id || 'unknown',
+          buyerEmail: user.emailAddresses[0]?.emailAddress
+        });
+      } catch (logError) {
+        console.error('Error logging security event:', logError);
+        // Don't fail the contact attempt due to logging errors
+      }
 
       const message = `Hi! I'm interested in your product:\n\n📦 ${productName}\n🆔 Product ID: ${productUniqueId}\n💰 Price: ₹${productPrice.toLocaleString()}\n\nIs it still available?`;
       const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;

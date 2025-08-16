@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,11 +10,13 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Product } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const MyListings = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingProduct, setUpdatingProduct] = useState<string | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<string | null>(null);
   const { user } = useUser();
   const { toast } = useToast();
 
@@ -56,23 +59,17 @@ const MyListings = () => {
           console.error('Error fetching public products:', publicError);
         } else if (publicProducts?.length) {
           console.log('Found products in public table:', publicProducts.length);
-          // Convert public products to our format
-          userProducts = publicProducts.map(item => ({
-            id: item.id,
-            unique_id: item.unique_id,
-            name: item.name,
-            description: item.description || '',
-            price: item.price,
-            category: item.category,
-            location: item.location,
-            whatsapp_number: '', // Not available in public view
-            image_url: item.image_url || '',
-            user_id: user.id, // Set current user as owner
-            user_email: user.emailAddresses[0]?.emailAddress || '',
-            user_name: item.user_name,
-            created_at: item.created_at,
-            is_sold: item.is_sold
-          }));
+          // Convert public products to our format and try to claim them
+          for (const item of publicProducts) {
+            await claimProduct(item.id);
+          }
+          // Refetch after claiming
+          const { data: refreshedProducts } = await supabase
+            .from('products')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+          userProducts = refreshedProducts || [];
         }
       }
 
@@ -108,18 +105,62 @@ const MyListings = () => {
     }
   };
 
+  const claimProduct = async (productId: string) => {
+    if (!user) return;
+    
+    try {
+      // Update the product to claim ownership
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({
+          user_id: user.id,
+          user_email: user.emailAddresses[0]?.emailAddress || '',
+          user_name: user.fullName || `${user.firstName} ${user.lastName}`.trim()
+        })
+        .eq('id', productId);
+
+      if (updateError) {
+        console.error('Error claiming product:', updateError);
+        return;
+      }
+
+      // Create contact info with a default WhatsApp number if missing
+      const { error: contactError } = await supabase
+        .from('product_contacts')
+        .upsert({
+          product_id: productId,
+          user_id: user.id,
+          user_email: user.emailAddresses[0]?.emailAddress || '',
+          whatsapp_number: '918639081837' // Default number, user should update this
+        }, {
+          onConflict: 'product_id'
+        });
+
+      if (contactError) {
+        console.error('Error creating contact info:', contactError);
+      }
+    } catch (error) {
+      console.error('Error claiming product:', error);
+    }
+  };
+
   const toggleSoldStatus = async (productId: string, currentStatus: boolean) => {
     try {
       setUpdatingProduct(productId);
+      
+      // Update in the main products table
       const { error } = await supabase
         .from('products')
         .update({ is_sold: !currentStatus })
-        .eq('id', productId);
-      
+        .eq('id', productId)
+        .eq('user_id', user?.id); // Ensure user owns the product
+
       if (error) {
+        console.error('Error updating product status:', error);
         throw new Error(error.message);
       }
 
+      // Update local state
       setProducts(products.map(p => 
         p.id === productId ? { ...p, isSold: !currentStatus } : p
       ));
@@ -132,7 +173,7 @@ const MyListings = () => {
       console.error('Error updating product:', error);
       toast({
         title: "Error",
-        description: "Failed to update product status",
+        description: "Failed to update product status. Make sure you own this product.",
         variant: "destructive"
       });
     } finally {
@@ -141,21 +182,34 @@ const MyListings = () => {
   };
 
   const deleteProduct = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this listing?')) {
-      return;
-    }
-
     try {
+      setDeletingProduct(productId);
+      
+      // Delete from products table (will trigger deletion from public table via trigger)
       const { error } = await supabase
         .from('products')
         .delete()
-        .eq('id', productId);
-      
+        .eq('id', productId)
+        .eq('user_id', user?.id); // Ensure user owns the product
+
       if (error) {
+        console.error('Error deleting product:', error);
         throw new Error(error.message);
       }
 
+      // Delete contact info
+      const { error: contactError } = await supabase
+        .from('product_contacts')
+        .delete()
+        .eq('product_id', productId);
+
+      if (contactError) {
+        console.error('Error deleting contact info:', contactError);
+      }
+
+      // Update local state
       setProducts(products.filter(p => p.id !== productId));
+      
       toast({
         title: "Success",
         description: "Product deleted successfully",
@@ -164,9 +218,11 @@ const MyListings = () => {
       console.error('Error deleting product:', error);
       toast({
         title: "Error",
-        description: "Failed to delete product",
+        description: "Failed to delete product. Make sure you own this product.",
         variant: "destructive"
       });
+    } finally {
+      setDeletingProduct(null);
     }
   };
 
@@ -279,13 +335,38 @@ const MyListings = () => {
                         </span>
                       </Button>
                       
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => deleteProduct(product.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={deletingProduct === product.id}
+                          >
+                            {deletingProduct === product.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{product.name}"? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => deleteProduct(product.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 </CardContent>
