@@ -122,6 +122,48 @@ export type Database = {
         }
         Relationships: []
       }
+      products_public: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_sold: boolean
+          location: string
+          name: string
+          price: number
+          unique_id: string
+          user_name: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id: string
+          image_url?: string | null
+          is_sold?: boolean
+          location: string
+          name: string
+          price: number
+          unique_id: string
+          user_name: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_sold?: boolean
+          location?: string
+          name?: string
+          price?: number
+          unique_id?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string
@@ -148,48 +190,7 @@ export type Database = {
       }
     }
     Views: {
-      products_public: {
-        Row: {
-          category: string | null
-          created_at: string | null
-          description: string | null
-          id: string | null
-          image_url: string | null
-          is_sold: boolean | null
-          location: string | null
-          name: string | null
-          price: number | null
-          unique_id: string | null
-          user_name: string | null
-        }
-        Insert: {
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          image_url?: string | null
-          is_sold?: boolean | null
-          location?: string | null
-          name?: string | null
-          price?: number | null
-          unique_id?: string | null
-          user_name?: string | null
-        }
-        Update: {
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          image_url?: string | null
-          is_sold?: boolean | null
-          location?: string | null
-          name?: string | null
-          price?: number | null
-          unique_id?: string | null
-          user_name?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       can_access_product_details: {
