@@ -12,7 +12,7 @@ import "./index.css";
 const queryClient = new QueryClient();
 
 // Updated Clerk publishable key
-const CLERK_PUBLISHABLE_KEY = "pk_test_ZmFtb3VzLXdhbHJ1cy0yMS5jbGVyay5hY2NvdW50cy5kZXYk";
+const CLERK_PUBLISHABLE_KEY = "pk_test_c3dlZXQtbWFsYW11dGUtNjUuY2xlcmsuYWNjb3VudHMuZGV2JA";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
