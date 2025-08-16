@@ -30,10 +30,29 @@ serve(async (req) => {
 
     console.log('Creating product:', product)
 
+    // Map camelCase properties to snake_case for database
+    const dbProduct = {
+      id: product.id,
+      unique_id: product.uniqueId,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      category: product.category,
+      location: product.location,
+      whatsapp_number: product.whatsappNumber,
+      image_url: product.imageUrl || '',
+      user_id: product.userId,
+      user_email: product.userEmail,
+      user_name: product.userName,
+      is_sold: product.isSold || false
+    }
+
+    console.log('Mapped product for database:', dbProduct)
+
     // Insert into products table (triggers will sync to products_public)
     const { data, error } = await supabaseServiceRole
       .from('products')
-      .insert([product])
+      .insert([dbProduct])
       .select()
       .single()
 
