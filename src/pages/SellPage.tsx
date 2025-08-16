@@ -10,12 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, AlertCircle } from "lucide-react";
+import { Upload, AlertCircle, X } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SearchableLocationSelect from "@/components/SearchableLocationSelect";
 import { CATEGORIES } from "@/types";
 import { saveProductToSupabase, generateProductId } from "@/utils/supabaseStorage";
+import { uploadImageToSupabase } from "@/utils/imageUpload";
 
 const SellPage = () => {
   const [name, setName] = useState("");
@@ -25,7 +26,9 @@ const SellPage = () => {
   const [location, setLocation] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { user } = useUser();
@@ -35,12 +38,37 @@ const SellPage = () => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        setError("Image size should be less than 5MB");
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        setError("Image size should be less than 10MB");
         return;
       }
+      
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        setError("Only JPEG, PNG, GIF, and WebP images are allowed");
+        return;
+      }
+      
       setImage(file);
       setError(null);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImage(null);
+    setImagePreview(null);
+    // Reset file input
+    const fileInput = document.getElementById('image') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
     }
   };
 
@@ -71,9 +99,18 @@ const SellPage = () => {
       // Upload image first if provided
       let imageUrl = '';
       if (image) {
-        // For now, we'll skip image upload and just save the product
-        // TODO: Implement proper image upload to Supabase storage
-        imageUrl = '';
+        setImageUploading(true);
+        console.log('Uploading image to Supabase...');
+        
+        const uploadResult = await uploadImageToSupabase(image);
+        
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.error || 'Failed to upload image');
+        }
+        
+        imageUrl = uploadResult.url || '';
+        console.log('Image uploaded successfully:', imageUrl);
+        setImageUploading(false);
       }
 
       await saveProductToSupabase({
@@ -104,6 +141,7 @@ const SellPage = () => {
       setError(error instanceof Error ? error.message : 'Failed to create listing');
     } finally {
       setLoading(false);
+      setImageUploading(false);
     }
   };
 
@@ -216,28 +254,47 @@ const SellPage = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="image">Product Image</Label>
-                  <div className="flex items-center justify-center w-full">
-                    <label
-                      htmlFor="image"
-                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-muted rounded-lg cursor-pointer bg-muted/10 hover:bg-muted/20 transition-colors"
-                    >
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
-                        <p className="mb-2 text-sm text-muted-foreground">
-                          <span className="font-semibold">Click to upload</span> or drag and drop
-                        </p>
-                        <p className="text-xs text-muted-foreground">PNG, JPG or JPEG (MAX. 5MB)</p>
-                      </div>
-                      <input
-                        id="image"
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleImageChange}
+                  
+                  {imagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-48 object-cover rounded-lg border"
                       />
-                    </label>
-                  </div>
-                  {image && (
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center w-full">
+                      <label
+                        htmlFor="image"
+                        className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-muted rounded-lg cursor-pointer bg-muted/10 hover:bg-muted/20 transition-colors"
+                      >
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                          <p className="mb-2 text-sm text-muted-foreground">
+                            <span className="font-semibold">Click to upload</span> or drag and drop
+                          </p>
+                          <p className="text-xs text-muted-foreground">PNG, JPG, GIF or WebP (MAX. 10MB)</p>
+                        </div>
+                        <input
+                          id="image"
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                        />
+                      </label>
+                    </div>
+                  )}
+                  
+                  {image && !imagePreview && (
                     <p className="text-sm text-muted-foreground">
                       Selected: {image.name}
                     </p>
@@ -247,9 +304,9 @@ const SellPage = () => {
                 <Button 
                   type="submit" 
                   className="w-full" 
-                  disabled={loading}
+                  disabled={loading || imageUploading}
                 >
-                  {loading ? "Creating Listing..." : "Create Listing"}
+                  {imageUploading ? "Uploading Image..." : loading ? "Creating Listing..." : "Create Listing"}
                 </Button>
               </form>
             </CardContent>
