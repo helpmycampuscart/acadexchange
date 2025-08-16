@@ -1,30 +1,38 @@
 
-import { StrictMode } from "react";
+import React from "react";
 import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 import { ClerkProvider } from "@clerk/clerk-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
-import { ClerkSupabaseProvider } from "@/components/ClerkSupabaseProvider";
-import App from "./App";
+import App from "./App.tsx";
 import "./index.css";
 
-const queryClient = new QueryClient();
+// Import your publishable key
+const PUBLISHABLE_KEY = "pk_test_c3dlZXQtbWFsYW11dGUtNjUuY2xlcmsuYWNjb3VudHMuZGV2JA";
 
-// Updated Clerk publishable key
-const CLERK_PUBLISHABLE_KEY = "pk_test_c3dlZXQtbWFsYW11dGUtNjUuY2xlcmsuYWNjb3VudHMuZGV2JA";
+if (!PUBLISHABLE_KEY) {
+  throw new Error("Missing Publishable Key");
+}
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 3,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
-      <ClerkSupabaseProvider>
-        <QueryClientProvider client={queryClient}>
-          <BrowserRouter>
-            <App />
-            <Toaster />
-          </BrowserRouter>
-        </QueryClientProvider>
-      </ClerkSupabaseProvider>
+  <React.StrictMode>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <App />
+          <Toaster />
+        </BrowserRouter>
+      </QueryClientProvider>
     </ClerkProvider>
-  </StrictMode>
+  </React.StrictMode>
 );

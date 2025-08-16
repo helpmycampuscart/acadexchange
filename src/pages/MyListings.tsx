@@ -36,10 +36,26 @@ const MyListings = () => {
     
     setLoading(true);
     try {
+      console.log('Fetching products for user:', user.id);
+      
+      // Get all products and filter by user ID
       const allProducts = await getProductsFromSupabase();
-      const myProducts = allProducts.filter(product => product.userId === user.id);
-      setProducts(myProducts);
-      console.log('Fetched products for user:', { userId: user.id, count: myProducts.length });
+      console.log('All products fetched:', allProducts.length);
+      
+      // Debug: Check if any products have this user ID
+      const userProducts = allProducts.filter(product => {
+        console.log('Checking product:', {
+          productId: product.id,
+          productUserId: product.userId,
+          currentUserId: user.id,
+          matches: product.userId === user.id
+        });
+        return product.userId === user.id;
+      });
+      
+      console.log('User products found:', userProducts.length);
+      setProducts(userProducts);
+      
     } catch (error) {
       console.error('Error fetching products:', error);
       toast({

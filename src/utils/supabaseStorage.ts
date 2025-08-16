@@ -38,14 +38,10 @@ export const saveProductToSupabase = async (product: Product): Promise<void> => 
 
     console.log('Product created successfully via Edge Function');
 
-    // Also save to product_contacts for secure contact info (non-blocking)
-    try {
-      await saveProductContactInfo(product);
-      console.log('Product contact info saved successfully');
-    } catch (contactError) {
-      console.error('Non-blocking: failed to save product contact info', contactError);
-      // Do not throw, listing creation should still succeed
-    }
+    // CRITICAL: Save to product_contacts for secure contact info
+    console.log('Saving product contact info...');
+    await saveProductContactInfo(product);
+    console.log('Product contact info saved successfully');
     
   } catch (error) {
     console.error('Database error saving product:', error);
@@ -63,6 +59,14 @@ export const saveProductToSupabase = async (product: Product): Promise<void> => 
 
 export const saveProductContactInfo = async (product: Product): Promise<void> => {
   try {
+    console.log('Saving contact info for product:', product.id);
+    console.log('Contact data:', {
+      product_id: product.id,
+      user_id: product.userId,
+      user_email: product.userEmail,
+      whatsapp_number: product.whatsappNumber
+    });
+
     const { error } = await supabase
       .from('product_contacts')
       .upsert({
@@ -70,12 +74,16 @@ export const saveProductContactInfo = async (product: Product): Promise<void> =>
         user_id: product.userId,
         user_email: product.userEmail,
         whatsapp_number: product.whatsappNumber
+      }, {
+        onConflict: 'product_id'
       });
 
     if (error) {
       console.error('Error saving product contact info:', error);
       throw error;
     }
+
+    console.log('Contact info saved successfully for product:', product.id);
   } catch (error) {
     console.error('Error in saveProductContactInfo:', error);
     throw error;
