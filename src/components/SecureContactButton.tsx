@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useUser } from "@clerk/clerk-react";
 import { useToast } from "@/hooks/use-toast";
 import { logSecurityEvent } from "@/utils/securityUtils";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SecureContactButtonProps {
   productId: string;

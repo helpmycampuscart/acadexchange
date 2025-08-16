@@ -10,7 +10,7 @@ export const generateProductId = (): string => {
   return `${prefix}${timestamp}${random}`.toUpperCase();
 };
 
-// Enhanced product operations with security
+// Enhanced product operations with security - now using secure contact table
 export const saveProductToSupabase = async (product: Product): Promise<{ success: boolean; error?: string }> => {
   try {
     // Rate limiting check
@@ -40,7 +40,8 @@ export const saveProductToSupabase = async (product: Product): Promise<{ success
     };
 
     console.log('Inserting product into database...');
-    const { error } = await supabase
+    // Step 1: Insert product data (without sensitive contact info)
+    const { error: productError } = await supabase
       .from('products')
       .insert({
         id: sanitizedProduct.id,
@@ -50,21 +51,39 @@ export const saveProductToSupabase = async (product: Product): Promise<{ success
         price: sanitizedProduct.price,
         category: sanitizedProduct.category,
         location: sanitizedProduct.location,
-        whatsapp_number: sanitizedProduct.whatsappNumber,
+        whatsapp_number: sanitizedProduct.whatsappNumber, // Keep for backward compatibility
         image_url: sanitizedProduct.imageUrl,
         user_id: sanitizedProduct.userId,
-        user_email: sanitizedProduct.userEmail,
+        user_email: sanitizedProduct.userEmail, // Keep for backward compatibility
         user_name: sanitizedProduct.userName,
         is_sold: sanitizedProduct.isSold,
       });
 
-    if (error) {
-      console.error('Database error saving product:', error);
-      await logSecurityEvent('database_error', { userId: product.userId, error: error.message });
-      return { success: false, error: `Database error: ${error.message}` };
+    if (productError) {
+      console.error('Database error saving product:', productError);
+      await logSecurityEvent('database_error', { userId: product.userId, error: productError.message });
+      return { success: false, error: `Database error: ${productError.message}` };
     }
 
-    console.log('Product saved successfully');
+    // Step 2: Insert contact information into secure table
+    const { error: contactError } = await supabase
+      .from('product_contacts')
+      .insert({
+        product_id: sanitizedProduct.id,
+        user_id: sanitizedProduct.userId,
+        user_email: sanitizedProduct.userEmail,
+        whatsapp_number: sanitizedProduct.whatsappNumber
+      });
+
+    if (contactError) {
+      // If contact insert fails, we should clean up the product record
+      await supabase.from('products').delete().eq('id', sanitizedProduct.id);
+      console.error('Database error saving contact info:', contactError);
+      await logSecurityEvent('database_error', { userId: product.userId, error: contactError.message });
+      return { success: false, error: `Failed to save contact information: ${contactError.message}` };
+    }
+
+    console.log('Product and contact info saved successfully');
     await logSecurityEvent('product_created', { userId: product.userId, productId: product.id });
     return { success: true };
   } catch (error) {
@@ -154,17 +173,21 @@ export const updateProductInSupabase = async (productId: string, updates: Partia
       updateData.location = sanitizeInput(updates.location);
     }
     
+    // Handle WhatsApp number updates in the secure contact table
+    let contactUpdateData: any = {};
     if (updates.whatsappNumber) {
       const whatsappRegex = /^[+]?[1-9]\d{7,14}$/;
       if (!whatsappRegex.test(updates.whatsappNumber.replace(/[\s-]/g, ''))) {
         return { success: false, error: 'Please enter a valid WhatsApp number' };
       }
-      updateData.whatsapp_number = updates.whatsappNumber;
+      updateData.whatsapp_number = updates.whatsappNumber; // Keep for backward compatibility
+      contactUpdateData.whatsapp_number = updates.whatsappNumber;
     }
     
     if (updates.imageUrl !== undefined) updateData.image_url = updates.imageUrl;
     if (updates.isSold !== undefined) updateData.is_sold = updates.isSold;
 
+    // Update product data
     const { error } = await supabase
       .from('products')
       .update(updateData)
@@ -174,6 +197,20 @@ export const updateProductInSupabase = async (productId: string, updates: Partia
       console.error('Error updating product:', error);
       await logSecurityEvent('update_error', { productId, error: error.message });
       return { success: false, error: error.message };
+    }
+
+    // Update contact information if needed
+    if (Object.keys(contactUpdateData).length > 0) {
+      const { error: contactError } = await supabase
+        .from('product_contacts')
+        .update(contactUpdateData)
+        .eq('product_id', productId);
+
+      if (contactError) {
+        console.error('Error updating contact info:', contactError);
+        await logSecurityEvent('contact_update_error', { productId, error: contactError.message });
+        // Don't fail the entire update if contact update fails
+      }
     }
 
     await logSecurityEvent('product_updated', { productId, updates: Object.keys(updateData) });
@@ -241,7 +278,19 @@ export const deleteProductFromSupabase = async (productId: string, userId?: stri
 
     console.log('Ownership verified. Proceeding with deletion...');
 
-    // Attempt deletion with detailed logging
+    // Step 1: Delete contact information first
+    const { error: contactDeleteError } = await supabase
+      .from('product_contacts')
+      .delete()
+      .eq('product_id', productId)
+      .eq('user_id', userId);
+
+    if (contactDeleteError) {
+      console.log('Warning: Failed to delete contact info:', contactDeleteError);
+      // Continue with product deletion even if contact deletion fails
+    }
+
+    // Step 2: Delete product with detailed logging
     const { data: deletedRows, error: deleteError } = await supabase
       .from('products')
       .delete()
@@ -266,7 +315,7 @@ export const deleteProductFromSupabase = async (productId: string, userId?: stri
       return { success: false, error: 'Product could not be deleted. It may have already been removed.' };
     }
 
-    console.log('✅ Product deleted successfully');
+    console.log('✅ Product and contact info deleted successfully');
     await logSecurityEvent('product_deleted', { productId, userId });
     console.log('=== DELETION DEBUG END ===');
     return { success: true };
