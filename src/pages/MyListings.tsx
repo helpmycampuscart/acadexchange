@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +8,7 @@ import { Loader2, Edit, Trash2, Package, Eye, EyeOff } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Product } from "@/types";
-import { getUserProductsFromSupabase, updateProductInSupabase, deleteProductFromSupabase } from "@/utils/supabaseStorage";
+import { supabase } from "@/integrations/supabase/client";
 
 const MyListings = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -29,8 +28,74 @@ const MyListings = () => {
     
     try {
       setLoading(true);
-      const userProducts = await getUserProductsFromSupabase(user.id);
-      setProducts(userProducts);
+      console.log('Fetching user products for:', user.id);
+      
+      // First try to get from the private products table
+      const { data: privateProducts, error: privateError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (privateError) {
+        console.error('Error fetching private products:', privateError);
+      }
+
+      // If no private products found, try to find products by matching user email/name from public table
+      let userProducts: any[] = privateProducts || [];
+      
+      if (!userProducts.length) {
+        console.log('No private products found, checking public products by user info...');
+        const { data: publicProducts, error: publicError } = await supabase
+          .from('products_public')
+          .select('*')
+          .eq('user_name', user.fullName || `${user.firstName} ${user.lastName}`.trim())
+          .order('created_at', { ascending: false });
+
+        if (publicError) {
+          console.error('Error fetching public products:', publicError);
+        } else if (publicProducts?.length) {
+          console.log('Found products in public table:', publicProducts.length);
+          // Convert public products to our format
+          userProducts = publicProducts.map(item => ({
+            id: item.id,
+            unique_id: item.unique_id,
+            name: item.name,
+            description: item.description || '',
+            price: item.price,
+            category: item.category,
+            location: item.location,
+            whatsapp_number: '', // Not available in public view
+            image_url: item.image_url || '',
+            user_id: user.id, // Set current user as owner
+            user_email: user.emailAddresses[0]?.emailAddress || '',
+            user_name: item.user_name,
+            created_at: item.created_at,
+            is_sold: item.is_sold
+          }));
+        }
+      }
+
+      // Map the data to our Product interface
+      const mappedProducts: Product[] = userProducts.map(item => ({
+        id: item.id,
+        uniqueId: item.unique_id,
+        name: item.name,
+        description: item.description || '',
+        price: item.price,
+        category: item.category,
+        location: item.location,
+        whatsappNumber: item.whatsapp_number || '',
+        imageUrl: item.image_url || '',
+        userId: item.user_id,
+        userEmail: item.user_email,
+        userName: item.user_name,
+        createdAt: item.created_at,
+        isSold: item.is_sold
+      }));
+
+      console.log(`Found ${mappedProducts.length} products for user`);
+      setProducts(mappedProducts);
     } catch (error) {
       console.error('Error fetching user products:', error);
       toast({
@@ -46,20 +111,23 @@ const MyListings = () => {
   const toggleSoldStatus = async (productId: string, currentStatus: boolean) => {
     try {
       setUpdatingProduct(productId);
-      const result = await updateProductInSupabase(productId, { isSold: !currentStatus });
+      const { error } = await supabase
+        .from('products')
+        .update({ is_sold: !currentStatus })
+        .eq('id', productId);
       
-      if (result.success) {
-        setProducts(products.map(p => 
-          p.id === productId ? { ...p, isSold: !currentStatus } : p
-        ));
-        
-        toast({
-          title: "Success",
-          description: `Product marked as ${!currentStatus ? 'sold' : 'available'}`,
-        });
-      } else {
-        throw new Error(result.error);
+      if (error) {
+        throw new Error(error.message);
       }
+
+      setProducts(products.map(p => 
+        p.id === productId ? { ...p, isSold: !currentStatus } : p
+      ));
+      
+      toast({
+        title: "Success",
+        description: `Product marked as ${!currentStatus ? 'sold' : 'available'}`,
+      });
     } catch (error) {
       console.error('Error updating product:', error);
       toast({
@@ -78,17 +146,20 @@ const MyListings = () => {
     }
 
     try {
-      const result = await deleteProductFromSupabase(productId);
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
       
-      if (result.success) {
-        setProducts(products.filter(p => p.id !== productId));
-        toast({
-          title: "Success",
-          description: "Product deleted successfully",
-        });
-      } else {
-        throw new Error(result.error);
+      if (error) {
+        throw new Error(error.message);
       }
+
+      setProducts(products.filter(p => p.id !== productId));
+      toast({
+        title: "Success",
+        description: "Product deleted successfully",
+      });
     } catch (error) {
       console.error('Error deleting product:', error);
       toast({
