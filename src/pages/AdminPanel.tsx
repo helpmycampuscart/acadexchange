@@ -11,7 +11,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { getProductsFromSupabase, deleteProductFromSupabase, getUsersFromClerk } from "@/utils/supabaseStorage";
+import { getProductsFromSupabase, deleteProductFromSupabase } from "@/utils/supabaseStorage";
+// Move user fetching to a dedicated util to avoid missing export issues
+import { getUsersFromClerk } from "@/utils/adminUsers";
 import { Product, User } from "@/types";
 import ProductCard from "@/components/ProductCard";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,7 +47,7 @@ const AdminPanel = () => {
     try {
       const [productsData, usersData] = await Promise.all([
         getProductsFromSupabase(),
-        getUsersFromClerk() // Now using Clerk users
+        getUsersFromClerk()
       ]);
       
       setProducts(productsData);
