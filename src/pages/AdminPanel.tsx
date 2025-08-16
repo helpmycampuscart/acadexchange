@@ -70,13 +70,7 @@ const AdminPanel = () => {
     try {
       console.log('Admin deleting product:', { productId, adminId: user?.id });
       
-      // Find the product to get the owner's user ID
-      const product = products.find(p => p.id === productId);
-      if (!product) {
-        throw new Error('Product not found');
-      }
-      
-      const result = await deleteProductFromSupabase(productId, product.userId);
+      const result = await deleteProductFromSupabase(productId);
       
       if (result.success) {
         setProducts(products.filter(p => p.id !== productId));

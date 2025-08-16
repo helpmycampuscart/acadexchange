@@ -68,7 +68,7 @@ const MyListings = () => {
     setDeletingProduct(productId);
     
     try {
-      const result = await deleteProductFromSupabase(productId, user.id);
+      const result = await deleteProductFromSupabase(productId);
       
       console.log('Deletion result:', result);
       

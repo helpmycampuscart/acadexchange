@@ -1,5 +1,6 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { Product } from '@/types';
+import { Product, User } from '@/types';
 
 export const generateProductId = (): string => {
   return Date.now().toString();
@@ -140,7 +141,7 @@ export const updateProductInSupabase = async (id: string, updates: Partial<Produ
   }
 };
 
-export const deleteProductFromSupabase = async (id: string) => {
+export const deleteProductFromSupabase = async (id: string, userId?: string) => {
   try {
     const { error } = await supabase
       .from('products')
@@ -156,5 +157,42 @@ export const deleteProductFromSupabase = async (id: string) => {
   } catch (error) {
     console.error('Error in deleteProductFromSupabase:', error);
     return { success: false, error: 'Failed to delete product' };
+  }
+};
+
+export const getUsersFromClerk = async (): Promise<User[]> => {
+  try {
+    console.log('Fetching users from Supabase...');
+    
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+
+    if (!data) {
+      console.log('No users found in database');
+      return [];
+    }
+
+    // Map the data to our User interface
+    const users: User[] = data.map(item => ({
+      id: item.id,
+      name: item.name,
+      email: item.email,
+      role: item.role as 'user' | 'admin',
+      createdAt: item.created_at
+    }));
+
+    console.log(`Fetched ${users.length} users from Supabase`);
+    return users;
+    
+  } catch (error) {
+    console.error('Error in getUsersFromClerk:', error);
+    throw error;
   }
 };
