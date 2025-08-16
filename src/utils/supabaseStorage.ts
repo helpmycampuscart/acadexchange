@@ -38,8 +38,14 @@ export const saveProductToSupabase = async (product: Product): Promise<void> => 
 
     console.log('Product created successfully via Edge Function');
 
-    // Also save to product_contacts for secure contact info
-    await saveProductContactInfo(product);
+    // Also save to product_contacts for secure contact info (non-blocking)
+    try {
+      await saveProductContactInfo(product);
+      console.log('Product contact info saved successfully');
+    } catch (contactError) {
+      console.error('Non-blocking: failed to save product contact info', contactError);
+      // Do not throw, listing creation should still succeed
+    }
     
   } catch (error) {
     console.error('Database error saving product:', error);
