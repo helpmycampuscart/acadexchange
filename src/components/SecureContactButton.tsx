@@ -16,6 +16,32 @@ interface SecureContactButtonProps {
   isSold?: boolean;
 }
 
+// Helper function to format phone number for WhatsApp
+const formatWhatsAppNumber = (phoneNumber: string): string => {
+  if (!phoneNumber) return '';
+  
+  // Remove all non-digit characters
+  let cleanNumber = phoneNumber.replace(/\D/g, '');
+  
+  // If number starts with 91, assume it already has country code
+  if (cleanNumber.startsWith('91') && cleanNumber.length === 12) {
+    return cleanNumber;
+  }
+  
+  // If number is 10 digits, add Indian country code
+  if (cleanNumber.length === 10) {
+    return '91' + cleanNumber;
+  }
+  
+  // If number starts with 0, remove it and add country code
+  if (cleanNumber.startsWith('0') && cleanNumber.length === 11) {
+    return '91' + cleanNumber.substring(1);
+  }
+  
+  // Return as is for other formats
+  return cleanNumber;
+};
+
 const SecureContactButton = ({ 
   productId, 
   productName, 
@@ -77,12 +103,24 @@ const SecureContactButton = ({
       }
 
       const contactInfo = data[0];
-      const phoneNumber = contactInfo?.whatsapp_number;
+      let phoneNumber = contactInfo?.whatsapp_number;
 
       if (!phoneNumber) {
         toast({
           title: "Contact unavailable",
           description: "WhatsApp number not available for this product",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Format the phone number for WhatsApp
+      phoneNumber = formatWhatsAppNumber(phoneNumber);
+
+      if (!phoneNumber) {
+        toast({
+          title: "Invalid contact",
+          description: "The contact number format is invalid",
           variant: "destructive"
         });
         return;
