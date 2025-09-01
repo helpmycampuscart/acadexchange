@@ -4,29 +4,34 @@ import { motion } from "framer-motion";
 
 export default function WorldMapDemo() {
   return (
-    <div className="py-40 bg-background w-full">
-      <div className="max-w-7xl mx-auto text-center">
-        <p className="font-bold text-xl md:text-4xl text-foreground">
-          Campus{" "}
-          <span className="text-muted-foreground">
-            {"Network".split("").map((word, idx) => (
-              <motion.span
-                key={idx}
-                className="inline-block"
-                initial={{ x: -10, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.5, delay: idx * 0.04 }}
-              >
-                {word}
-              </motion.span>
-            ))}
-          </span>
-        </p>
-        <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto py-4">
-          Connect with students across 200+ cities in India. 
-          Buy and sell from your local campus community with ease.
-        </p>
-      </div>
+        <div className="py-40 bg-background/95 backdrop-blur-sm w-full">
+          <div className="max-w-7xl mx-auto text-center px-4">
+            <p className="font-bold text-xl md:text-4xl text-foreground mb-4">
+              Campus{" "}
+              <span className="text-primary">
+                {"Network".split("").map((word, idx) => (
+                  <motion.span
+                    key={idx}
+                    className="inline-block"
+                    initial={{ x: -10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: idx * 0.04 }}
+                  >
+                    {word}
+                  </motion.span>
+                ))}
+              </span>
+            </p>
+            <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+              Connect with students across 200+ cities in India. 
+              Buy and sell from your local campus community with confidence.
+            </p>
+            {/* Connection Status Indicator */}
+            <div className="flex items-center justify-center gap-2 mb-8">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-sm text-muted-foreground">Network Active</span>
+            </div>
+          </div>
       <WorldMap
         zoomLevel={1.5}
         centerLat={20.5937}
