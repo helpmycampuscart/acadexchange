@@ -74,7 +74,11 @@ const AdminPanel = () => {
       
       // Use secure Edge Function for admin deletion
       const { error } = await supabase.functions.invoke("delete-product", {
-        body: { productId, userId: user?.id },
+        body: { 
+          productId, 
+          userId: user?.id,
+          userEmail: user?.emailAddresses?.[0]?.emailAddress || undefined,
+        },
       });
 
       if (error) {

@@ -18,7 +18,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { productId, userId } = await req.json();
+    const { productId, userId, userEmail } = await req.json();
     console.log("[delete-product] Request:", { productId, userId });
 
     if (!productId || !userId) {
@@ -52,7 +52,7 @@ serve(async (req) => {
     }
 
     // Check authorization: allow owner or admin
-    // Fetch user role
+    // Fetch user role (by id first)
     const { data: userRow, error: roleErr } = await supabase
       .from("users")
       .select("role")
@@ -60,18 +60,38 @@ serve(async (req) => {
       .maybeSingle();
 
     if (roleErr) {
-      console.error("[delete-product] Role fetch error:", roleErr);
+      console.error("[delete-product] Role fetch error (by id):", roleErr);
       return new Response(JSON.stringify({ error: "Unable to verify permissions" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    // If no role found by id, try by email (handles cases where user row exists with same email but different id)
+    let userRole: string | undefined = userRow?.role as string | undefined;
+    if (!userRole && userEmail) {
+      const { data: emailRow, error: emailErr } = await supabase
+        .from("users")
+        .select("role")
+        .eq("email", userEmail)
+        .maybeSingle();
+      if (emailErr) {
+        console.warn("[delete-product] Role fetch warning (by email):", emailErr.message);
+      }
+      if (emailRow?.role) userRole = emailRow.role as string;
+    }
+
+    // Fallback admin allowlist (to unblock admin actions if DB row is missing)
+    const ADMIN_EMAILS = [
+      "abhinavpadige06@gmail.com",
+      "help.mycampuscart@gmail.com",
+    ];
+
     const isOwner = product.user_id === userId;
-    const isAdmin = userRow?.role === "admin";
+    const isAdmin = (userRole === "admin") || (userEmail ? ADMIN_EMAILS.includes(userEmail) : false);
 
     if (!isOwner && !isAdmin) {
-      console.error("[delete-product] Auth error:", { productUserId: product.user_id, userId, role: userRow?.role });
+      console.error("[delete-product] Auth error:", { productUserId: product.user_id, userId, userEmail, role: userRole });
       return new Response(JSON.stringify({ error: "Not authorized" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
