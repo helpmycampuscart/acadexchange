@@ -51,9 +51,27 @@ serve(async (req) => {
       });
     }
 
-    // Check authorization
-    if (product.user_id !== userId) {
-      console.error("[delete-product] Auth error:", { productUserId: product.user_id, userId });
+    // Check authorization: allow owner or admin
+    // Fetch user role
+    const { data: userRow, error: roleErr } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (roleErr) {
+      console.error("[delete-product] Role fetch error:", roleErr);
+      return new Response(JSON.stringify({ error: "Unable to verify permissions" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const isOwner = product.user_id === userId;
+    const isAdmin = userRow?.role === "admin";
+
+    if (!isOwner && !isAdmin) {
+      console.error("[delete-product] Auth error:", { productUserId: product.user_id, userId, role: userRow?.role });
       return new Response(JSON.stringify({ error: "Not authorized" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
