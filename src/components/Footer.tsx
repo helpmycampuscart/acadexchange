@@ -23,10 +23,10 @@ const Footer = () => {
           <div className="space-y-4">
             <h4 className="text-md font-semibold">Quick Links</h4>
             <div className="space-y-2 text-sm">
-              <div className="text-muted-foreground hover:text-foreground cursor-pointer">Browse Products</div>
-              <div className="text-muted-foreground hover:text-foreground cursor-pointer">Sell Your Item</div>
-              <div className="text-muted-foreground hover:text-foreground cursor-pointer">My Listings</div>
-              <div className="text-muted-foreground hover:text-foreground cursor-pointer">Safety Tips</div>
+              <div className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors" onClick={() => window.location.href = '/marketplace'}>Browse Products</div>
+              <div className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors" onClick={() => window.location.href = '/sell'}>Sell Your Item</div>
+              <div className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors" onClick={() => window.location.href = '/my-listings'}>My Listings</div>
+              <div className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors" onClick={() => window.location.href = '/dashboard'}>Safety Tips</div>
             </div>
           </div>
 
@@ -37,10 +37,10 @@ const Footer = () => {
               <div className="flex items-center space-x-2 text-sm">
                 <Mail className="h-4 w-4 text-primary" />
                 <a 
-                  href="mailto:help.mycampuscart@gmail.com" 
+                  href="mailto:connect.acadexchange@gmail.com" 
                   className="text-muted-foreground hover:text-primary transition-colors"
                 >
-                  help.mycampuscart@gmail.com
+                  connect.acadexchange@gmail.com
                 </a>
               </div>
               <div className="flex items-center space-x-2 text-sm">

@@ -7,7 +7,7 @@ export default function WorldMapDemo() {
         <div className="py-40 bg-background/95 backdrop-blur-sm w-full">
           <div className="max-w-7xl mx-auto text-center px-4">
             <p className="font-bold text-xl md:text-4xl text-foreground mb-4">
-              Campus{" "}
+              acadexchange{" "}
               <span className="text-primary">
                 {"Network".split("").map((word, idx) => (
                   <motion.span
