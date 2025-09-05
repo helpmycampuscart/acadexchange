@@ -8,7 +8,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-primary">MyCampusCart</h3>
+            <h3 className="text-lg font-bold text-primary">acadexchange</h3>
             <p className="text-muted-foreground text-sm">
               Your trusted marketplace for buying and selling used items within the campus community.
             </p>
@@ -57,7 +57,7 @@ const Footer = () => {
         <div className="border-t border-border pt-6 mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-sm text-muted-foreground">
-              © 2025 MyCampusCart. All rights reserved.
+              © 2025 acadexchange. All rights reserved.
             </div>
             <div className="flex space-x-6 text-sm text-muted-foreground">
               <span className="hover:text-foreground cursor-pointer">Privacy Policy</span>

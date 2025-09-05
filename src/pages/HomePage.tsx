@@ -64,7 +64,7 @@ const HomePage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <h2 className="text-3xl font-bold mb-4">Why Choose MyCampusCart?</h2>
+            <h2 className="text-3xl font-bold mb-4">Why Choose acadexchange?</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Simple, secure, and designed for students
             </p>
