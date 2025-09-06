@@ -77,24 +77,23 @@ const SecureContactButton = ({
     try {
       console.log("Getting contact info for product:", productId);
       
-      // Use the secure contact function instead
-      const { data, error } = await supabase.rpc("get_secure_contact_info", {
-        product_id_param: productId,
-        viewer_id_param: user.id,
+      // Call Edge Function to get secure contact info
+      const { data, error } = await supabase.functions.invoke("get-product-contact", {
+        body: { productId, viewerId: user.id },
       });
 
       let phoneNumber = "";
 
       if (error) {
-        console.warn("get_secure_contact_info error:", error);
+        console.warn("get-product-contact error:", error);
         // Fallback to provided whatsapp number
         if (whatsappNumber) {
           phoneNumber = whatsappNumber;
           console.log("Using fallback WhatsApp number:", phoneNumber);
         }
-      } else if (data && data.length > 0 && data[0].whatsapp_number) {
-        phoneNumber = data[0].whatsapp_number;
-        console.log("Got WhatsApp number from secure API:", phoneNumber);
+      } else if (data && data.success && data.contact?.whatsappNumber) {
+        phoneNumber = data.contact.whatsappNumber;
+        console.log("Got WhatsApp number from Edge Function:", phoneNumber);
       } else if (whatsappNumber) {
         phoneNumber = whatsappNumber;
         console.log("Using provided WhatsApp number:", phoneNumber);
