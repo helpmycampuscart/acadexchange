@@ -28,7 +28,7 @@ export default function WorldMapDemo() {
             </p>
             {/* Connection Status Indicator */}
             <div className="flex items-center justify-center gap-2 mb-8">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
               <span className="text-sm text-muted-foreground">Network Active</span>
             </div>
           </div>
@@ -165,7 +165,7 @@ export default function WorldMapDemo() {
             end: { lat: 19.0760, lng: 72.8777 }, // Mumbai
           },
         ]}
-        lineColor="hsl(142, 76%, 36%)"
+        lineColor="hsl(164, 85%, 50%)"
       />
     </div>
   );

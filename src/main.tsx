@@ -8,8 +8,8 @@ import { Toaster } from "@/components/ui/toaster";
 import App from "./App.tsx";
 import "./index.css";
 
-// Import your publishable key
-const PUBLISHABLE_KEY = "pk_test_c3dlZXQtbWFsYW11dGUtNjUuY2xlcmsuYWNjb3VudHMuZGV2JA";
+// Import your publishable key from environment
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 if (!PUBLISHABLE_KEY) {
   throw new Error("Missing Publishable Key");
