@@ -45,7 +45,7 @@ const HomePage = () => {
               transition={{ delay: 0.2 }}
             >
               <div className="text-3xl font-bold text-primary mb-2">
-                {stats.totalUsers}+
+                50+
               </div>
               <div className="text-muted-foreground">Sign ups</div>
             </motion.div>
