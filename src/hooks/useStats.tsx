@@ -43,14 +43,15 @@ export const useStats = () => {
           console.error('Error fetching products count:', productsError);
         }
 
-        // Get total registered users from Clerk (users table) using secure RPC
-        const totalUsersPromise = supabase
-          .rpc('get_total_user_count');
+        // Get total registered users from Clerk using Edge Function
+        const totalUsersPromise = supabase.functions.invoke('get-clerk-user-count');
 
-        const { data: totalUsers, error: totalUsersError } = await Promise.race([
+        const { data: clerkUsersResponse, error: totalUsersError } = await Promise.race([
           totalUsersPromise,
           timeoutPromise
         ]) as any;
+
+        const totalUsers = clerkUsersResponse?.count || 0;
 
         if (totalUsersError) {
           console.error('Error fetching total users count:', totalUsersError);
