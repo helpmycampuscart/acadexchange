@@ -18,6 +18,8 @@ const Navbar = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
       className="border-b border-border/30 glass-card sticky top-0 z-50 backdrop-blur-xl"
+      role="navigation"
+      aria-label="Main navigation"
     >
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
@@ -28,7 +30,7 @@ const Navbar = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            MyCampusCart
+            acadexchange
           </motion.div>
 
           {/* Enhanced Navigation Links */}

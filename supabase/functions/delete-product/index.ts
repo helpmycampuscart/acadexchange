@@ -1,0 +1,150 @@
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    const { productId, userId, userEmail } = await req.json();
+    console.log("[delete-product] Request:", { productId, userId });
+
+    if (!productId || !userId) {
+      console.error("[delete-product] Missing data:", { productId, userId });
+      return new Response(JSON.stringify({ error: "Missing productId or userId" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Verify product exists and user owns it
+    const { data: product, error: findErr } = await supabase
+      .from("products")
+      .select("user_id, name")
+      .eq("id", productId)
+      .single();
+
+    if (findErr) {
+      console.error("[delete-product] Find error:", findErr);
+      return new Response(JSON.stringify({ error: "Product not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!product) {
+      return new Response(JSON.stringify({ error: "Product not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Check authorization: allow owner or admin
+    // Fetch user role (by id first)
+    const { data: userRow, error: roleErr } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (roleErr) {
+      console.error("[delete-product] Role fetch error (by id):", roleErr);
+      return new Response(JSON.stringify({ error: "Unable to verify permissions" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // If no role found by id, try by email (handles cases where user row exists with same email but different id)
+    let userRole: string | undefined = userRow?.role as string | undefined;
+    if (!userRole && userEmail) {
+      const { data: emailRow, error: emailErr } = await supabase
+        .from("users")
+        .select("role")
+        .eq("email", userEmail)
+        .maybeSingle();
+      if (emailErr) {
+        console.warn("[delete-product] Role fetch warning (by email):", emailErr.message);
+      }
+      if (emailRow?.role) userRole = emailRow.role as string;
+    }
+
+    // Fallback admin allowlist (to unblock admin actions if DB row is missing)
+    const ADMIN_EMAILS = [
+      "abhinavpadige06@gmail.com",
+      "help.mycampuscart@gmail.com",
+    ];
+
+    const isOwner = product.user_id === userId;
+    const isAdmin = (userRole === "admin") || (userEmail ? ADMIN_EMAILS.includes(userEmail) : false);
+
+    if (!isOwner && !isAdmin) {
+      console.error("[delete-product] Auth error:", { productUserId: product.user_id, userId, userEmail, role: userRole });
+      return new Response(JSON.stringify({ error: "Not authorized" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log("[delete-product] Deleting product:", { productId, name: product.name });
+
+    // Delete contact info first (if exists)
+    const { error: contactErr } = await supabase
+      .from("product_contacts")
+      .delete()
+      .eq("product_id", productId);
+
+    if (contactErr) {
+      console.warn("[delete-product] Contact delete warning:", contactErr.message);
+    }
+
+    // Delete from products_public
+    const { error: pubErr } = await supabase
+      .from("products_public")
+      .delete()
+      .eq("id", productId);
+
+    if (pubErr) {
+      console.warn("[delete-product] Public delete warning:", pubErr.message);
+    }
+
+    // Delete main product
+    const { error: delErr } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", productId);
+
+    if (delErr) {
+      console.error("[delete-product] Delete error:", delErr);
+      return new Response(JSON.stringify({ error: delErr.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log("[delete-product] Success:", { productId });
+    
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    console.error("[delete-product] Unexpected error:", e);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});

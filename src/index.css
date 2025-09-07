@@ -3,7 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* MyCampusCart Design System - Green Minimalistic Theme */
+/* acadexchange Design System - Green Minimalistic Theme */
 
 @layer base {
   :root {
@@ -17,8 +17,8 @@
     --popover: 220 13% 10%;
     --popover-foreground: 220 9% 90%;
 
-    /* Green primary color */
-    --primary: 142 76% 36%;
+    /* Mint green primary color to match logo */
+    --primary: 164 85% 50%;
     --primary-foreground: 220 13% 8%;
 
     --secondary: 220 13% 15%;
@@ -35,18 +35,18 @@
 
     --border: 220 13% 20%;
     --input: 220 13% 15%;
-    --ring: 142 76% 36%;
+    --ring: 164 85% 50%;
 
     --radius: 0.5rem;
 
     --sidebar-background: 220 13% 10%;
     --sidebar-foreground: 220 9% 90%;
-    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary: 164 85% 50%;
     --sidebar-primary-foreground: 220 13% 8%;
     --sidebar-accent: 220 13% 15%;
     --sidebar-accent-foreground: 220 9% 90%;
     --sidebar-border: 220 13% 20%;
-    --sidebar-ring: 142 76% 36%;
+    --sidebar-ring: 164 85% 50%;
   }
 
   .light {
@@ -59,7 +59,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 13% 8%;
 
-    --primary: 142 71% 45%;
+    --primary: 164 80% 45%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 13% 95%;
@@ -76,16 +76,16 @@
 
     --border: 220 13% 85%;
     --input: 220 13% 95%;
-    --ring: 142 71% 45%;
+    --ring: 164 80% 45%;
     
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 13% 8%;
-    --sidebar-primary: 142 71% 45%;
+    --sidebar-primary: 164 80% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 13% 95%;
     --sidebar-accent-foreground: 220 13% 8%;
     --sidebar-border: 220 13% 85%;
-    --sidebar-ring: 142 71% 45%;
+    --sidebar-ring: 164 80% 45%;
   }
 }
 

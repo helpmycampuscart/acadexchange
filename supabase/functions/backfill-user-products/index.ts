@@ -7,6 +7,32 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper function to format phone number
+const formatPhoneNumber = (phoneNumber: string): string => {
+  if (!phoneNumber) return '';
+  
+  // Remove all non-digit characters
+  let cleanNumber = phoneNumber.replace(/\D/g, '');
+  
+  // If number starts with 91, assume it already has country code
+  if (cleanNumber.startsWith('91') && cleanNumber.length === 12) {
+    return cleanNumber;
+  }
+  
+  // If number is 10 digits, add Indian country code
+  if (cleanNumber.length === 10) {
+    return '91' + cleanNumber;
+  }
+  
+  // If number starts with 0, remove it and add country code
+  if (cleanNumber.startsWith('0') && cleanNumber.length === 11) {
+    return '91' + cleanNumber.substring(1);
+  }
+  
+  // Return as is for other formats
+  return cleanNumber;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -40,7 +66,6 @@ serve(async (req) => {
         [
           `user_id.eq.${userId}`,
           `user_email.eq.${userEmail}`,
-          // user_name may contain spaces, but Supabase handles it in the JS client
           `user_name.eq.${userName}`
         ].join(",")
       );
@@ -86,11 +111,14 @@ serve(async (req) => {
       }
 
       // 3) Ensure contact info exists for the product
-      const whatsapp = p.whatsapp_number || null;
+      let whatsapp = p.whatsapp_number || null;
       if (!whatsapp) {
         console.log(`[backfill-user-products] Product ${p.id} has no whatsapp_number, skipping contact upsert`);
         continue;
       }
+
+      // Format the phone number properly
+      whatsapp = formatPhoneNumber(whatsapp);
 
       const { error: contactErr } = await supabaseClient
         .from("product_contacts")

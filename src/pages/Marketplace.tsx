@@ -130,10 +130,10 @@ const Marketplace = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold mb-4">
-            Campus Marketplace
+            acadexchange Marketplace
           </h1>
           <p className="text-muted-foreground text-lg">
-            Discover amazing deals from fellow students
+            Connect with students across India and discover amazing deals
           </p>
         </div>
 

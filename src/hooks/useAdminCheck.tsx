@@ -4,7 +4,7 @@ import { useUser } from '@clerk/clerk-react';
 
 const ADMIN_EMAILS = [
   'abhinavpadige06@gmail.com',
-  'help.mycampuscart@gmail.com'
+  'connect.acadexchange@gmail.com'
 ];
 
 export const useAdminCheck = () => {

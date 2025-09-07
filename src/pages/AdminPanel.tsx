@@ -72,17 +72,25 @@ const AdminPanel = () => {
     try {
       console.log('Admin deleting product:', { productId, adminId: user?.id });
       
-      const result = await deleteProductFromSupabase(productId);
-      
-      if (result.success) {
-        setProducts(products.filter(p => p.id !== productId));
-        toast({
-          title: "Product deleted successfully",
-          description: "The product has been removed from the platform"
-        });
-      } else {
-        throw new Error(result.error);
+      // Use secure Edge Function for admin deletion
+      const { error } = await supabase.functions.invoke("delete-product", {
+        body: { 
+          productId, 
+          userId: user?.id,
+          userEmail: user?.emailAddresses?.[0]?.emailAddress || undefined,
+        },
+      });
+
+      if (error) {
+        console.error('Admin Edge delete-product error:', error);
+        throw new Error(error.message || 'Failed to delete product');
       }
+
+      setProducts(products.filter(p => p.id !== productId));
+      toast({
+        title: "Product deleted successfully",
+        description: "The product has been removed from the platform"
+      });
     } catch (error: any) {
       console.error('Admin deletion error:', error);
       toast({

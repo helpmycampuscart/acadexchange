@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_rate_limits: {
+        Row: {
+          access_count: number | null
+          created_at: string | null
+          id: string
+          last_accessed: string | null
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          access_count?: number | null
+          created_at?: string | null
+          id?: string
+          last_accessed?: string | null
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          access_count?: number | null
+          created_at?: string | null
+          id?: string
+          last_accessed?: string | null
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       product_contacts: {
         Row: {
           created_at: string | null
@@ -201,11 +228,11 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      get_product_contact_info: {
-        Args: { product_id: string }
+      get_secure_contact_info: {
+        Args: { product_id_param: string; viewer_id_param: string }
         Returns: {
+          seller_id: string
           user_email: string
-          user_id: string
           whatsapp_number: string
         }[]
       }
