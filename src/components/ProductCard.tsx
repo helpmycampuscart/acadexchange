@@ -158,8 +158,9 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
               >
                 <img
                   src={product.imageUrl}
-                  alt={product.name}
+                  alt={`${product.name} - ${product.category} for sale in ${product.location} at ₹${product.price}`}
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </motion.div>
             )}
