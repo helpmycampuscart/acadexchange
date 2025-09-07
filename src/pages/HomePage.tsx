@@ -26,7 +26,7 @@ const HomePage = () => {
       {/* Stats Section */}
       <section className="py-16 px-4">
         <div className="container mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
             <motion.div 
               className="text-center"
               initial={{ opacity: 0, y: 20 }}
@@ -37,6 +37,17 @@ const HomePage = () => {
                 {stats.totalProducts}+
               </div>
               <div className="text-muted-foreground">Products</div>
+            </motion.div>
+            <motion.div 
+              className="text-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="text-3xl font-bold text-primary mb-2">
+                50+
+              </div>
+              <div className="text-muted-foreground">Sign ups</div>
             </motion.div>
             <motion.div 
               className="text-center"

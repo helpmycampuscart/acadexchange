@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface Stats {
   totalProducts: number;
+  totalUsers: number;
   activeUsers: number;
   productsSold: number;
 }
@@ -11,6 +12,7 @@ interface Stats {
 export const useStats = () => {
   const [stats, setStats] = useState<Stats>({
     totalProducts: 0,
+    totalUsers: 0,
     activeUsers: 0,
     productsSold: 0
   });
@@ -39,6 +41,20 @@ export const useStats = () => {
 
         if (productsError) {
           console.error('Error fetching products count:', productsError);
+        }
+
+        // Get total registered users from Clerk using Edge Function
+        const totalUsersPromise = supabase.functions.invoke('get-clerk-user-count');
+
+        const { data: clerkUsersResponse, error: totalUsersError } = await Promise.race([
+          totalUsersPromise,
+          timeoutPromise
+        ]) as any;
+
+        const totalUsers = clerkUsersResponse?.count || 0;
+
+        if (totalUsersError) {
+          console.error('Error fetching total users count:', totalUsersError);
         }
 
         // Get active users count from products_public (users who have created at least one product)
@@ -80,6 +96,7 @@ export const useStats = () => {
 
         const finalStats = {
           totalProducts: totalProducts || 0,
+          totalUsers: totalUsers || 0,
           activeUsers: activeUsersCount || 0,
           productsSold: productsSold || 0
         };
@@ -91,7 +108,7 @@ export const useStats = () => {
       } catch (error) {
         console.error('Error fetching stats from Supabase:', error);
         // Set fallback stats if there's a connectivity issue
-        setStats({ totalProducts: 3, activeUsers: 2, productsSold: 0 });
+        setStats({ totalProducts: 3, totalUsers: 1, activeUsers: 2, productsSold: 0 });
         setError('Using cached stats (connection issue)');
       } finally {
         setLoading(false);
