@@ -16,137 +16,101 @@ interface SecureContactButtonProps {
   isSold?: boolean;
 }
 
-const formatWhatsAppNumber = (phoneNumber: string): string => {
-  if (!phoneNumber) return "";
-  
-  // Remove all non-digit characters
-  let clean = phoneNumber.replace(/\D/g, "");
-  
-  // If it already has country code (starts with 91 and is 12 digits)
-  if (clean.startsWith("91") && clean.length === 12) {
-    return clean;
-  }
-  
-  // If it's a 10-digit number, add 91 (Indian country code)
-  if (clean.length === 10) {
-    return "91" + clean;
-  }
-  
-  // If it starts with 0 and is 11 digits, replace 0 with 91
-  if (clean.startsWith("0") && clean.length === 11) {
-    return "91" + clean.substring(1);
-  }
-  
-  // Return as is if we can't format it properly
-  return clean;
-};
-
-const SecureContactButton = ({
-  productId,
-  productName,
-  productUniqueId,
-  productPrice,
-  whatsappNumber,
-  isSold = false,
+const SecureContactButton = ({ 
+  productId, 
+  productName, 
+  productUniqueId, 
+  productPrice, 
+  whatsappNumber, 
+  isSold = false 
 }: SecureContactButtonProps) => {
   const { user } = useUser();
   const { toast } = useToast();
   const [isContacting, setIsContacting] = useState(false);
 
   const handleWhatsAppClick = async () => {
+    // Security check: User must be authenticated
     if (!user) {
       toast({
         title: "Authentication required",
         description: "Please sign in to view seller contact information",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
 
+    // Security check: Product shouldn't be sold
     if (isSold) {
       toast({
         title: "Product sold",
         description: "This product has already been sold",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
 
     setIsContacting(true);
-
+    
     try {
-      console.log("Getting contact info for product:", productId);
-      
-      // Call Edge Function to get secure contact info
-      const { data, error } = await supabase.functions.invoke("get-product-contact", {
-        body: { productId, viewerId: user.id },
+      // Securely fetch contact information using database function
+      const { data, error } = await supabase.rpc('get_product_contact_info', {
+        product_id: productId
       });
 
-      let phoneNumber = "";
-
       if (error) {
-        console.warn("get-product-contact error:", error);
-        // Fallback to provided whatsapp number
-        if (whatsappNumber) {
-          phoneNumber = whatsappNumber;
-          console.log("Using fallback WhatsApp number:", phoneNumber);
-        }
-      } else if (data && data.success && data.contact?.whatsappNumber) {
-        phoneNumber = data.contact.whatsappNumber;
-        console.log("Got WhatsApp number from Edge Function:", phoneNumber);
-      } else if (whatsappNumber) {
-        phoneNumber = whatsappNumber;
-        console.log("Using provided WhatsApp number:", phoneNumber);
-      }
-
-      // Format the phone number
-      phoneNumber = formatWhatsAppNumber(phoneNumber);
-      console.log("Formatted phone number:", phoneNumber);
-
-      if (!phoneNumber || phoneNumber.length < 10) {
+        console.error('Database error:', error);
         toast({
-          title: "Contact unavailable",
-          description: "WhatsApp number not available for this product.",
-          variant: "destructive",
+          title: "Error",
+          description: "Unable to access contact information. Please try again.",
+          variant: "destructive"
         });
         return;
       }
 
-      // Log security event
-      try {
-        await logSecurityEvent("contact_accessed", {
-          productId,
-          buyerId: user.id,
-          buyerEmail: user.emailAddresses[0]?.emailAddress,
+      if (!data || data.length === 0) {
+        toast({
+          title: "Contact unavailable",
+          description: "Contact information is not available for this product",
+          variant: "destructive"
         });
-      } catch (e) {
-        console.error("Error logging security event:", e);
+        return;
       }
 
-      // Create WhatsApp message
-      const message = `Hi! I'm interested in your product:
+      const contactInfo = data[0];
+      const phoneNumber = contactInfo?.whatsapp_number;
 
-📦 ${productName}
-🆔 Product ID: ${productUniqueId}
-💰 Price: ₹${productPrice.toLocaleString()}
+      if (!phoneNumber) {
+        toast({
+          title: "Contact unavailable",
+          description: "WhatsApp number not available for this product",
+          variant: "destructive"
+        });
+        return;
+      }
 
-Is it still available?`;
+      // Log contact access for security monitoring
+      await logSecurityEvent('contact_accessed', {
+        productId,
+        buyerId: user.id,
+        sellerId: contactInfo.user_id,
+        buyerEmail: user.emailAddresses[0]?.emailAddress
+      });
 
+      const message = `Hi! I'm interested in your product:\n\n📦 ${productName}\n🆔 Product ID: ${productUniqueId}\n💰 Price: ₹${productPrice.toLocaleString()}\n\nIs it still available?`;
       const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
       
-      console.log("Opening WhatsApp URL:", whatsappUrl);
-      window.open(whatsappUrl, "_blank");
-
+      window.open(whatsappUrl, '_blank');
+      
       toast({
         title: "Opening WhatsApp",
         description: "You'll be redirected to WhatsApp to contact the seller",
       });
-    } catch (e) {
-      console.error("Unexpected error:", e);
+    } catch (error) {
+      console.error('Unexpected error:', error);
       toast({
         title: "Error",
         description: "Failed to access contact information. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsContacting(false);
@@ -172,14 +136,14 @@ Is it still available?`;
   }
 
   return (
-    <Button
-      size="sm"
+    <Button 
+      size="sm" 
       onClick={handleWhatsAppClick}
       disabled={isContacting}
       className="flex items-center space-x-2 hover:scale-105 transition-transform premium-button"
     >
       <MessageCircle className="h-4 w-4" />
-      <span>{isContacting ? "Connecting..." : "Contact Seller"}</span>
+      <span>{isContacting ? 'Connecting...' : 'Contact Seller'}</span>
     </Button>
   );
 };

@@ -87,10 +87,10 @@ const Dashboard = () => {
           {/* Welcome Section - Mobile Optimized */}
           <div className="text-center space-y-3 md:space-y-4">
             <h1 className="text-2xl md:text-4xl font-bold">
-              Welcome to <span className="text-primary">acadexchange</span>
+              Welcome to <span className="text-primary">CampusCart</span>
             </h1>
             <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto px-2">
-              Your trusted marketplace for buying and selling used items within the campus community
+              Your campus marketplace for buying and selling items with fellow students
             </p>
             
             {/* Quick Action Buttons - Mobile First */}

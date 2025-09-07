@@ -7,7 +7,6 @@ import SellPage from './pages/SellPage';
 import MyListings from './pages/MyListings';
 import AdminPanel from './pages/AdminPanel';
 import NotFound from './pages/NotFound';
-import ProductionReadiness from './pages/ProductionReadiness';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -33,11 +32,6 @@ function App() {
       <Route path="/admin" element={
         <ProtectedRoute adminOnly>
           <AdminPanel />
-        </ProtectedRoute>
-      } />
-      <Route path="/production-readiness" element={
-        <ProtectedRoute adminOnly>
-          <ProductionReadiness />
         </ProtectedRoute>
       } />
       <Route path="*" element={<NotFound />} />

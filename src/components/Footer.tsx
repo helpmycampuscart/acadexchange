@@ -8,7 +8,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-primary">acadexchange</h3>
+            <h3 className="text-lg font-bold text-primary">MyCampusCart</h3>
             <p className="text-muted-foreground text-sm">
               Your trusted marketplace for buying and selling used items within the campus community.
             </p>
@@ -23,10 +23,10 @@ const Footer = () => {
           <div className="space-y-4">
             <h4 className="text-md font-semibold">Quick Links</h4>
             <div className="space-y-2 text-sm">
-              <div className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors" onClick={() => window.location.href = '/marketplace'}>Browse Products</div>
-              <div className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors" onClick={() => window.location.href = '/sell'}>Sell Your Item</div>
-              <div className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors" onClick={() => window.location.href = '/my-listings'}>My Listings</div>
-              <div className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors" onClick={() => window.location.href = '/dashboard'}>Safety Tips</div>
+              <div className="text-muted-foreground hover:text-foreground cursor-pointer">Browse Products</div>
+              <div className="text-muted-foreground hover:text-foreground cursor-pointer">Sell Your Item</div>
+              <div className="text-muted-foreground hover:text-foreground cursor-pointer">My Listings</div>
+              <div className="text-muted-foreground hover:text-foreground cursor-pointer">Safety Tips</div>
             </div>
           </div>
 
@@ -37,10 +37,10 @@ const Footer = () => {
               <div className="flex items-center space-x-2 text-sm">
                 <Mail className="h-4 w-4 text-primary" />
                 <a 
-                  href="mailto:connect.acadexchange@gmail.com" 
+                  href="mailto:help.mycampuscart@gmail.com" 
                   className="text-muted-foreground hover:text-primary transition-colors"
                 >
-                  connect.acadexchange@gmail.com
+                  help.mycampuscart@gmail.com
                 </a>
               </div>
               <div className="flex items-center space-x-2 text-sm">
@@ -57,7 +57,7 @@ const Footer = () => {
         <div className="border-t border-border pt-6 mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-sm text-muted-foreground">
-              © 2025 acadexchange. All rights reserved.
+              © 2025 MyCampusCart. All rights reserved.
             </div>
             <div className="flex space-x-6 text-sm text-muted-foreground">
               <span className="hover:text-foreground cursor-pointer">Privacy Policy</span>

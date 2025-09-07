@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface Stats {
   totalProducts: number;
-  totalUsers: number;
   activeUsers: number;
   productsSold: number;
 }
@@ -12,7 +11,6 @@ interface Stats {
 export const useStats = () => {
   const [stats, setStats] = useState<Stats>({
     totalProducts: 0,
-    totalUsers: 0,
     activeUsers: 0,
     productsSold: 0
   });
@@ -24,91 +22,52 @@ export const useStats = () => {
       try {
         console.log('Fetching stats from Supabase...');
         
-        // Add timeout and retry logic for better error handling
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Request timeout')), 10000)
-        );
-
-        // Get total products count from products_public
-        const productsPromise = supabase
+        // Get total products count from products_public (which syncs with products table)
+        const { count: totalProducts, error: productsError } = await supabase
           .from('products_public')
           .select('*', { count: 'exact', head: true });
-
-        const { count: totalProducts, error: productsError } = await Promise.race([
-          productsPromise,
-          timeoutPromise
-        ]) as any;
 
         if (productsError) {
           console.error('Error fetching products count:', productsError);
         }
 
-        // Get total registered users from Clerk (users table) using secure RPC
-        const totalUsersPromise = supabase
-          .rpc('get_total_user_count');
-
-        const { data: totalUsers, error: totalUsersError } = await Promise.race([
-          totalUsersPromise,
-          timeoutPromise
-        ]) as any;
-
-        if (totalUsersError) {
-          console.error('Error fetching total users count:', totalUsersError);
-        }
-
-        // Get active users count from products_public (users who have created at least one product)
-        const usersPromise = supabase
-          .from('products_public')
-          .select('user_name')
-          .not('user_name', 'is', null);
-
-        const { data: activeUsersData, error: usersError } = await Promise.race([
-          usersPromise,
-          timeoutPromise
-        ]) as any;
-
-        let activeUsersCount = 0;
-        if (!usersError && activeUsersData) {
-          // Get unique user names as proxy for active users
-          const uniqueUserNames = new Set(activeUsersData.map((p: any) => p.user_name));
-          activeUsersCount = uniqueUserNames.size;
-        }
+        // Get active users count (users who have created products)
+        const { count: activeUsers, error: usersError } = await supabase
+          .from('users')
+          .select('*', { count: 'exact', head: true });
 
         if (usersError) {
-          console.error('Error fetching active users:', usersError);
+          console.error('Error fetching users count:', usersError);
         }
 
         // Get sold products count
-        const soldPromise = supabase
+        const { count: productsSold, error: soldError } = await supabase
           .from('products_public')
           .select('*', { count: 'exact', head: true })
           .eq('is_sold', true);
-
-        const { count: productsSold, error: soldError } = await Promise.race([
-          soldPromise,
-          timeoutPromise
-        ]) as any;
 
         if (soldError) {
           console.error('Error fetching sold products count:', soldError);
         }
 
+        // Set stats with fallback to 0 if any query failed
         const finalStats = {
           totalProducts: totalProducts || 0,
-          totalUsers: totalUsers || 0,
-          activeUsers: activeUsersCount || 0,
+          activeUsers: activeUsers || 0,
           productsSold: productsSold || 0
         };
 
         setStats(finalStats);
         console.log('Successfully fetched stats:', finalStats);
-        setError(null);
+
+        // Clear any previous errors if we got data successfully
+        if (!productsError && !usersError && !soldError) {
+          setError(null);
+        }
 
       } catch (error) {
         console.error('Error fetching stats from Supabase:', error);
-        // Set fallback stats if there's a connectivity issue
-        setStats({ totalProducts: 3, totalUsers: 1, activeUsers: 2, productsSold: 0 });
-        setError('Using cached stats (connection issue)');
+        setError('Unable to fetch latest stats');
       } finally {
         setLoading(false);
       }
@@ -127,9 +86,9 @@ export const useStats = () => {
         }
       )
       .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'products' }, 
+        { event: '*', schema: 'public', table: 'users' }, 
         () => {
-          console.log('Products table changed, refetching stats...');
+          console.log('Users table changed, refetching stats...');
           fetchStats();
         }
       )
