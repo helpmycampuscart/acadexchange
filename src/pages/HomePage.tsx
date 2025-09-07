@@ -19,9 +19,9 @@ const HomePage = () => {
       <Navbar />
       
       {/* Hero Section with Sparkles */}
-      <header className="relative">
+      <section className="relative">
         <SparklesPreview />
-      </header>
+      </section>
 
       {/* Stats Section */}
       <section className="py-16 px-4">
@@ -66,7 +66,7 @@ const HomePage = () => {
           >
             <h2 className="text-3xl font-bold mb-4">Why Choose acadexchange?</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Simple, secure, and designed for students across India
+              Simple, secure, and designed for students
             </p>
           </motion.div>
 
@@ -78,10 +78,10 @@ const HomePage = () => {
             >
               <Card className="h-full border-border/50 bg-card/50 backdrop-blur">
                 <CardContent className="p-6 text-center">
-                  <Package className="h-12 w-12 text-primary mx-auto mb-4" aria-hidden="true" />
+                  <Package className="h-12 w-12 text-primary mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2">Easy Selling</h3>
                   <p className="text-muted-foreground">
-                    List your textbooks, electronics, and furniture in seconds with our simple form
+                    List your items in seconds with our simple form
                   </p>
                 </CardContent>
               </Card>
@@ -94,10 +94,10 @@ const HomePage = () => {
             >
               <Card className="h-full border-border/50 bg-card/50 backdrop-blur">
                 <CardContent className="p-6 text-center">
-                  <Users className="h-12 w-12 text-primary mx-auto mb-4" aria-hidden="true" />
+                  <Users className="h-12 w-12 text-primary mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2">Campus Community</h3>
                   <p className="text-muted-foreground">
-                    Connect with verified students from your city and college
+                    Connect with students from your city
                   </p>
                 </CardContent>
               </Card>
@@ -110,10 +110,10 @@ const HomePage = () => {
             >
               <Card className="h-full border-border/50 bg-card/50 backdrop-blur">
                 <CardContent className="p-6 text-center">
-                  <ShoppingBag className="h-12 w-12 text-primary mx-auto mb-4" aria-hidden="true" />
+                  <ShoppingBag className="h-12 w-12 text-primary mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2">Great Deals</h3>
                   <p className="text-muted-foreground">
-                    Find quality books, electronics, and furniture at student-friendly prices
+                    Find quality items at student-friendly prices
                   </p>
                 </CardContent>
               </Card>
@@ -130,9 +130,9 @@ const HomePage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <h3 className="text-3xl font-bold mb-4">Available Across India</h3>
+            <h2 className="text-3xl font-bold mb-4">Available Across India</h2>
             <p className="text-muted-foreground">
-              Serving students in 100+ cities across major states including Delhi, Mumbai, Bangalore, and more
+              Serving students in 100+ cities across major states
             </p>
           </motion.div>
 
