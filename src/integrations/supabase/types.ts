@@ -236,6 +236,10 @@ export type Database = {
           whatsapp_number: string
         }[]
       }
+      get_total_user_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       log_admin_action: {
         Args: {
           action_details?: Json

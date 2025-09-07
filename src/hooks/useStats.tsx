@@ -43,12 +43,11 @@ export const useStats = () => {
           console.error('Error fetching products count:', productsError);
         }
 
-        // Get total registered users from Clerk (users table)
+        // Get total registered users from Clerk (users table) using secure RPC
         const totalUsersPromise = supabase
-          .from('users')
-          .select('*', { count: 'exact', head: true });
+          .rpc('get_total_user_count');
 
-        const { count: totalUsers, error: totalUsersError } = await Promise.race([
+        const { data: totalUsers, error: totalUsersError } = await Promise.race([
           totalUsersPromise,
           timeoutPromise
         ]) as any;
