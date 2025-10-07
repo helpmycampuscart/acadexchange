@@ -39,41 +39,33 @@ serve(async (req) => {
   }
 
   try {
-    // Get JWT token from Authorization header
+    // Best-effort auth using Supabase JWT if present; fallback to viewerId from body
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Missing authorization" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    let viewerId: string | null = null;
+
+    if (authHeader) {
+      const supabaseAuth = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+      if (user) {
+        viewerId = user.id;
+      } else {
+        console.warn("[get-product-contact] JWT auth failed:", authError?.message);
+      }
     }
 
-    // Create client with anon key to verify JWT
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    // Verify user is authenticated
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) {
-      console.error("[get-product-contact] Auth error:", authError);
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const viewerId = user.id;
-
-    // Create service role client for privileged operations
+    // Service role client for DB operations
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { productId } = await req.json();
+    // Parse body and allow viewerId fallback when unauthenticated
+    const { productId, viewerId: viewerIdFromBody } = await req.json();
+    if (!viewerId && viewerIdFromBody) viewerId = viewerIdFromBody;
     console.log("[get-product-contact] Request:", { productId, viewerId });
 
     if (!productId) {
@@ -88,7 +80,7 @@ serve(async (req) => {
       .from("products")
       .select("*")
       .eq("id", productId)
-      .single();
+      .maybeSingle();
 
     if (prodErr || !product) {
       console.error("[get-product-contact] Product error:", prodErr);
@@ -105,7 +97,7 @@ serve(async (req) => {
       });
     }
 
-    // Don't return own contact info
+    // Don't return own contact info if we can determine viewer
     if (viewerId && product.user_id === viewerId) {
       return new Response(JSON.stringify({ error: "Own product" }), {
         status: 400,
@@ -118,13 +110,13 @@ serve(async (req) => {
     let sellerEmail = product.user_email;
 
     // Try to get contact from product_contacts table first
-    const { data: contact, error: contactErr } = await supabase
+    const { data: contact } = await supabase
       .from("product_contacts")
       .select("whatsapp_number, user_id, user_email")
       .eq("product_id", productId)
-      .single();
+      .maybeSingle();
 
-    if (!contactErr && contact?.whatsapp_number) {
+    if (contact?.whatsapp_number) {
       console.log("[get-product-contact] Using contact table:", contact.whatsapp_number);
       whatsapp = contact.whatsapp_number;
       sellerId = contact.user_id ?? sellerId;
