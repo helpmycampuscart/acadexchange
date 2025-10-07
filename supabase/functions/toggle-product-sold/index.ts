@@ -13,17 +13,44 @@ serve(async (req) => {
   }
 
   try {
+    // Get JWT token from Authorization header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing authorization" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Verify user is authenticated
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      console.error("[toggle-product-sold] Auth error:", authError);
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userId = user.id;
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { productId, userId } = await req.json();
+    const { productId } = await req.json();
     console.log("[toggle-product-sold] Request:", { productId, userId });
 
-    if (!productId || !userId) {
-      console.error("[toggle-product-sold] Missing data:", { productId, userId });
-      return new Response(JSON.stringify({ error: "Missing productId or userId" }), {
+    if (!productId) {
+      console.error("[toggle-product-sold] Missing productId");
+      return new Response(JSON.stringify({ error: "Missing productId" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

@@ -16,6 +16,34 @@ serve(async (req) => {
   try {
     console.log('Create product function called');
     
+    // Get JWT token from Authorization header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing authorization" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Verify user is authenticated
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      console.error('Auth error:', authError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -25,7 +53,7 @@ serve(async (req) => {
     console.log('Product data received:', product);
 
     // Validate required fields
-    if (!product.name || !product.description || !product.price || !product.category || !product.location || !product.whatsappNumber || !product.userId) {
+    if (!product.name || !product.description || !product.price || !product.category || !product.location || !product.whatsappNumber) {
       console.error('Missing required fields');
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
@@ -35,6 +63,11 @@ serve(async (req) => {
         }
       );
     }
+
+    // Use authenticated user ID instead of client-provided one
+    const userId = user.id;
+    const userEmail = user.email ?? product.userEmail;
+    const userName = user.user_metadata?.name ?? product.userName;
 
     console.log('Inserting product into products table...');
     
@@ -51,9 +84,9 @@ serve(async (req) => {
         location: product.location,
         whatsapp_number: product.whatsappNumber,
         image_url: product.imageUrl || null,
-        user_id: product.userId,
-        user_email: product.userEmail,
-        user_name: product.userName,
+        user_id: userId,
+        user_email: userEmail,
+        user_name: userName,
         is_sold: false
       })
       .select()
@@ -77,8 +110,8 @@ serve(async (req) => {
       .from('product_contacts')
       .upsert({
         product_id: product.id,
-        user_id: product.userId,
-        user_email: product.userEmail,
+        user_id: userId,
+        user_email: userEmail,
         whatsapp_number: product.whatsappNumber
       }, {
         onConflict: 'product_id'

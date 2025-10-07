@@ -13,17 +13,45 @@ serve(async (req) => {
   }
 
   try {
+    // Get JWT token from Authorization header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing authorization" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Verify user is authenticated
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      console.error("[delete-product] Auth error:", authError);
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userId = user.id;
+    const userEmail = user.email;
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { productId, userId, userEmail } = await req.json();
+    const { productId } = await req.json();
     console.log("[delete-product] Request:", { productId, userId });
 
-    if (!productId || !userId) {
-      console.error("[delete-product] Missing data:", { productId, userId });
-      return new Response(JSON.stringify({ error: "Missing productId or userId" }), {
+    if (!productId) {
+      console.error("[delete-product] Missing productId");
+      return new Response(JSON.stringify({ error: "Missing productId" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -52,7 +80,6 @@ serve(async (req) => {
     }
 
     // Check authorization: allow owner or admin
-    // Fetch user role (by id first)
     const { data: userRow, error: roleErr } = await supabase
       .from("users")
       .select("role")
@@ -60,35 +87,16 @@ serve(async (req) => {
       .maybeSingle();
 
     if (roleErr) {
-      console.error("[delete-product] Role fetch error (by id):", roleErr);
+      console.error("[delete-product] Role fetch error:", roleErr);
       return new Response(JSON.stringify({ error: "Unable to verify permissions" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // If no role found by id, try by email (handles cases where user row exists with same email but different id)
-    let userRole: string | undefined = userRow?.role as string | undefined;
-    if (!userRole && userEmail) {
-      const { data: emailRow, error: emailErr } = await supabase
-        .from("users")
-        .select("role")
-        .eq("email", userEmail)
-        .maybeSingle();
-      if (emailErr) {
-        console.warn("[delete-product] Role fetch warning (by email):", emailErr.message);
-      }
-      if (emailRow?.role) userRole = emailRow.role as string;
-    }
-
-    // Fallback admin allowlist (to unblock admin actions if DB row is missing)
-    const ADMIN_EMAILS = [
-      "abhinavpadige06@gmail.com",
-      "help.mycampuscart@gmail.com",
-    ];
-
+    const userRole = userRow?.role as string | undefined;
     const isOwner = product.user_id === userId;
-    const isAdmin = (userRole === "admin") || (userEmail ? ADMIN_EMAILS.includes(userEmail) : false);
+    const isAdmin = userRole === "admin";
 
     if (!isOwner && !isAdmin) {
       console.error("[delete-product] Auth error:", { productUserId: product.user_id, userId, userEmail, role: userRole });
