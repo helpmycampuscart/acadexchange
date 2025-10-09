@@ -97,13 +97,7 @@ serve(async (req) => {
       });
     }
 
-    // Don't return own contact info if we can determine viewer
-    if (viewerId && product.user_id === viewerId) {
-      return new Response(JSON.stringify({ error: "Own product" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Allow users to view their own contact info
 
     let whatsapp = "";
     let sellerId = product.user_id;
