@@ -10,12 +10,14 @@ import { useStats } from "@/hooks/useStats";
 import { motion } from "framer-motion";
 import SparklesPreview from "@/components/sparkles-demo";
 import WorldMapDemo from "@/components/world-map-demo";
+import { AdPopup } from "@/components/AdPopup";
 
 const HomePage = () => {
   const { stats } = useStats();
 
   return (
     <div className="min-h-screen bg-background">
+      <AdPopup />
       <Navbar />
       
       {/* Hero Section with Sparkles */}

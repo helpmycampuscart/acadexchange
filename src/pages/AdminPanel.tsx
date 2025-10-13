@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
-import { Users, Package, Shield, MoreVertical, UserCheck, UserX, Trash2 } from "lucide-react";
+import { Users, Package, Shield, MoreVertical, UserCheck, UserX, Trash2, Image as ImageIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,8 +31,13 @@ const AdminPanel = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'products' | 'users'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'users' | 'ads'>('products');
   const [deletingProduct, setDeletingProduct] = useState<string | null>(null);
+  
+  // Ad Management State
+  const [adUrl, setAdUrl] = useState('');
+  const [adType, setAdType] = useState<'image' | 'video'>('image');
+  const [adLinkUrl, setAdLinkUrl] = useState('');
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -133,6 +141,47 @@ const AdminPanel = () => {
     }
   };
 
+  const handleSaveAd = () => {
+    if (!adUrl) {
+      toast({
+        title: "Error",
+        description: "Please provide a URL for the ad",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const ad = {
+      id: Date.now().toString(),
+      type: adType,
+      url: adUrl,
+      linkUrl: adLinkUrl || undefined
+    };
+
+    localStorage.setItem('activeAd', JSON.stringify(ad));
+    
+    toast({
+      title: "Success",
+      description: "Ad has been activated and will show to users"
+    });
+
+    setAdUrl('');
+    setAdLinkUrl('');
+  };
+
+  const handleRemoveAd = () => {
+    localStorage.removeItem('activeAd');
+    toast({
+      title: "Success",
+      description: "Ad has been removed"
+    });
+  };
+
+  const getCurrentAd = () => {
+    const adData = localStorage.getItem('activeAd');
+    return adData ? JSON.parse(adData) : null;
+  };
+
   if (adminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -226,6 +275,13 @@ const AdminPanel = () => {
             >
               <Users className="h-4 w-4 mr-2" />
               Users
+            </Button>
+            <Button
+              variant={activeTab === 'ads' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('ads')}
+            >
+              <ImageIcon className="h-4 w-4 mr-2" />
+              Ads
             </Button>
           </div>
 
@@ -373,6 +429,90 @@ const AdminPanel = () => {
                             ))}
                           </TableBody>
                         </Table>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Ads Tab */}
+              {activeTab === 'ads' && (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Ad Management</CardTitle>
+                      <CardDescription>
+                        Add image or video ads that will appear as popups to users
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="adType">Ad Type</Label>
+                          <Select value={adType} onValueChange={(value: 'image' | 'video') => setAdType(value)}>
+                            <SelectTrigger id="adType">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="image">Image</SelectItem>
+                              <SelectItem value="video">Video</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="adUrl">Ad URL (Image or Video)</Label>
+                          <Input
+                            id="adUrl"
+                            type="url"
+                            placeholder="https://example.com/ad-image.jpg"
+                            value={adUrl}
+                            onChange={(e) => setAdUrl(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="adLinkUrl">Link URL (Optional)</Label>
+                          <Input
+                            id="adLinkUrl"
+                            type="url"
+                            placeholder="https://example.com/product"
+                            value={adLinkUrl}
+                            onChange={(e) => setAdLinkUrl(e.target.value)}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Users will be redirected here when they click the ad
+                          </p>
+                        </div>
+
+                        <div className="flex gap-4">
+                          <Button onClick={handleSaveAd}>
+                            Save & Activate Ad
+                          </Button>
+                          <Button variant="destructive" onClick={handleRemoveAd}>
+                            Remove Active Ad
+                          </Button>
+                        </div>
+                      </div>
+
+                      {getCurrentAd() && (
+                        <div className="border rounded-lg p-4 space-y-2">
+                          <h3 className="font-semibold">Current Active Ad</h3>
+                          <div className="text-sm space-y-1">
+                            <p><span className="text-muted-foreground">Type:</span> {getCurrentAd().type}</p>
+                            <p><span className="text-muted-foreground">URL:</span> {getCurrentAd().url}</p>
+                            {getCurrentAd().linkUrl && (
+                              <p><span className="text-muted-foreground">Link:</span> {getCurrentAd().linkUrl}</p>
+                            )}
+                          </div>
+                          {getCurrentAd().type === 'image' && (
+                            <img 
+                              src={getCurrentAd().url} 
+                              alt="Active ad preview" 
+                              className="max-w-xs rounded-lg border mt-2"
+                            />
+                          )}
+                        </div>
                       )}
                     </CardContent>
                   </Card>
