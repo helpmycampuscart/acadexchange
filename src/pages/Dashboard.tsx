@@ -14,6 +14,7 @@ import { useStats } from "@/hooks/useStats";
 import { getProductsFromSupabase } from "@/utils/supabaseStorage";
 import { useClerkSync } from "@/hooks/useClerkSync";
 import { Product } from "@/types";
+import { AdPopup } from "@/components/AdPopup";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -79,6 +80,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <AdPopup />
       <Navbar />
       
       <div className="flex-1 container mx-auto px-4 py-4 md:py-8">
