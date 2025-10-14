@@ -10,20 +10,20 @@ export default function SparklesPreview() {
         acadexchange
       </h1>
       <div className="w-[40rem] h-40 relative">
-        {/* Gradients - responsive to theme */}
-        <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-foreground to-transparent h-[2px] w-3/4 blur-sm" />
-        <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-foreground to-transparent h-px w-3/4" />
-        <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-foreground to-transparent h-[5px] w-1/4 blur-sm" />
-        <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-foreground to-transparent h-px w-1/4" />
+        {/* Gradients with green in dark, black in light */}
+        <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-primary dark:via-primary to-transparent h-[2px] w-3/4 blur-sm" />
+        <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-primary dark:via-primary to-transparent h-px w-3/4" />
+        <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-primary dark:via-green-400 to-transparent h-[5px] w-1/4 blur-sm" />
+        <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-primary dark:via-green-400 to-transparent h-px w-1/4" />
 
-        {/* Core component - black in light mode, green in dark mode */}
+        {/* Core component */}
         <SparklesCore
           background="transparent"
           minSize={0.6}
           maxSize={1.4}
           particleDensity={800}
-          className="w-full h-full [&_canvas]:!mix-blend-normal dark:[&_canvas]:!mix-blend-screen"
-          particleColor="currentColor"
+          className="w-full h-full"
+          particleColor="#22c55e"
         />
 
         {/* Radial Gradient to prevent sharp edges */}
