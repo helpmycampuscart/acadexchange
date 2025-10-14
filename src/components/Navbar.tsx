@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { HoverBorderGradient } from "@/components/ui/hover-border-gradient";
 import { motion } from "framer-motion";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -81,6 +82,7 @@ const Navbar = () => {
 
           {/* Enhanced User Section */}
           <div className="flex items-center space-x-4">
+            <ThemeToggle />
             <SignedOut>
               <SignInButton mode="modal">
                 <HoverBorderGradient
