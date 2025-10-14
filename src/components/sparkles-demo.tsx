@@ -2,8 +2,12 @@
 "use client";
 import React from "react";
 import { SparklesCore } from "@/components/ui/sparkles";
+import { useTheme } from "next-themes";
 
 export default function SparklesPreview() {
+  const { theme } = useTheme();
+  const particleColor = theme === "light" ? "#000000" : "#22c55e";
+  
   return (
     <div className="h-[40rem] w-full bg-background flex flex-col items-center justify-center overflow-hidden rounded-md relative">
       <h1 className="md:text-7xl text-3xl lg:text-9xl font-bold text-center text-foreground relative z-20">
@@ -23,7 +27,7 @@ export default function SparklesPreview() {
           maxSize={1.4}
           particleDensity={800}
           className="w-full h-full"
-          particleColor="#22c55e"
+          particleColor={particleColor}
         />
 
         {/* Radial Gradient to prevent sharp edges */}
