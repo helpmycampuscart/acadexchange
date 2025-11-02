@@ -6,13 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useStats } from "@/hooks/useStats";
 import { motion } from "framer-motion";
 import SparklesPreview from "@/components/sparkles-demo";
 import WorldMapDemo from "@/components/world-map-demo";
 const HomePage = () => {
-  const { stats } = useStats();
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -21,47 +18,6 @@ const HomePage = () => {
       <header className="relative">
         <SparklesPreview />
       </header>
-
-      {/* Stats Section */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
-            <motion.div 
-              className="text-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <div className="text-3xl font-bold text-primary mb-2">
-                {stats.totalProducts}+
-              </div>
-              <div className="text-muted-foreground">Products</div>
-            </motion.div>
-            <motion.div 
-              className="text-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <div className="text-3xl font-bold text-primary mb-2">
-                50+
-              </div>
-              <div className="text-muted-foreground">Sign ups</div>
-            </motion.div>
-            <motion.div 
-              className="text-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <div className="text-3xl font-bold text-primary mb-2">
-                100+
-              </div>
-              <div className="text-muted-foreground">Cities</div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
 
       {/* World Map Section */}
       <WorldMapDemo />
