@@ -13,6 +13,9 @@ export default function SparklesPreview() {
       <h1 className="md:text-7xl text-3xl lg:text-9xl font-bold text-center text-foreground relative z-20">
         acadexchange
       </h1>
+      <p className="text-xl md:text-2xl text-muted-foreground text-center relative z-20 mt-4">
+        List it. Sell it.
+      </p>
       <div className="w-[40rem] h-40 relative">
         {/* Gradients with green in dark, black in light */}
         <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-primary dark:via-primary to-transparent h-[2px] w-3/4 blur-sm" />
