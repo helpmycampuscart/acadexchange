@@ -10,13 +10,17 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, AlertCircle, X } from "lucide-react";
+import { Upload, AlertCircle, X, CalendarIcon } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SearchableLocationSelect from "@/components/SearchableLocationSelect";
 import { CATEGORIES } from "@/types";
 import { saveProductToSupabase, generateProductId } from "@/utils/supabaseStorage";
 import { uploadImageToSupabase } from "@/utils/imageUpload";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const SellPage = () => {
   const [name, setName] = useState("");
@@ -25,6 +29,7 @@ const SellPage = () => {
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [purchasedDate, setPurchasedDate] = useState<Date>();
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -127,7 +132,8 @@ const SellPage = () => {
         userEmail: user.emailAddresses[0]?.emailAddress || '',
         userName: user.fullName || user.firstName || 'Anonymous',
         createdAt: new Date().toISOString(),
-        isSold: false
+        isSold: false,
+        purchasedDate: purchasedDate ? format(purchasedDate, 'yyyy-MM-dd') : undefined
       });
 
       toast({
@@ -250,6 +256,37 @@ const SellPage = () => {
                     placeholder="Enter WhatsApp number (with country code)"
                     required
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="purchaseDate">When did you buy this? (Optional)</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !purchasedDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {purchasedDate ? format(purchasedDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={purchasedDate}
+                        onSelect={setPurchasedDate}
+                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-sm text-muted-foreground">
+                    Help buyers know how old the item is
+                  </p>
                 </div>
 
                 <div className="space-y-2">

@@ -213,6 +213,17 @@ const ProductCard = ({ product, showActions = false, onEdit, onDelete, onRefresh
                 <Calendar className="h-4 w-4 text-primary" />
                 <span>Listed on {formatDate(product.createdAt)}</span>
               </motion.div>
+              {product.purchasedDate && (
+                <motion.div 
+                  className="flex items-center space-x-2"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <span>Bought in {new Date(product.purchasedDate).getFullYear()}</span>
+                </motion.div>
+              )}
             </div>
           </CardContent>
 

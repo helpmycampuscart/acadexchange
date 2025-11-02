@@ -87,7 +87,8 @@ serve(async (req) => {
         user_id: userId,
         user_email: userEmail,
         user_name: userName,
-        is_sold: false
+        is_sold: false,
+        purchased_date: product.purchasedDate || null
       })
       .select()
       .single();

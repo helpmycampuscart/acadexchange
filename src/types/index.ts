@@ -13,6 +13,7 @@ export interface Product {
   userName: string;
   createdAt: string;
   isSold: boolean;
+  purchasedDate?: string;
 }
 
 export interface User {

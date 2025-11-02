@@ -109,6 +109,7 @@ export type Database = {
           location: string
           name: string
           price: number
+          purchased_date: string | null
           unique_id: string
           user_email: string
           user_id: string
@@ -125,6 +126,7 @@ export type Database = {
           location: string
           name: string
           price: number
+          purchased_date?: string | null
           unique_id: string
           user_email: string
           user_id: string
@@ -141,6 +143,7 @@ export type Database = {
           location?: string
           name?: string
           price?: number
+          purchased_date?: string | null
           unique_id?: string
           user_email?: string
           user_id?: string
@@ -160,6 +163,7 @@ export type Database = {
           location: string
           name: string
           price: number
+          purchased_date: string | null
           unique_id: string
           user_name: string
         }
@@ -173,6 +177,7 @@ export type Database = {
           location: string
           name: string
           price: number
+          purchased_date?: string | null
           unique_id: string
           user_name: string
         }
@@ -186,6 +191,7 @@ export type Database = {
           location?: string
           name?: string
           price?: number
+          purchased_date?: string | null
           unique_id?: string
           user_name?: string
         }
@@ -224,10 +230,7 @@ export type Database = {
         Args: { product_user_id: string }
         Returns: boolean
       }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_user_role: { Args: never; Returns: string }
       get_secure_contact_info: {
         Args: { product_id_param: string; viewer_id_param: string }
         Returns: {
@@ -236,10 +239,7 @@ export type Database = {
           whatsapp_number: string
         }[]
       }
-      get_total_user_count: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      get_total_user_count: { Args: never; Returns: number }
       log_admin_action: {
         Args: {
           action_details?: Json
